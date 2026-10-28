@@ -2243,7 +2243,7 @@ class SettingsDialog(QDialog):
         title.setWordWrap(True)
         head.addWidget(title, 1)
         lay.addLayout(head)
-        text = QLabel(f"<p>© 2026 Frank — <a href='{REPO_URL}'>{REPO_URL.replace('https://', '')}</a></p>"
+        text = QLabel(f"<p>© 2026 FrankMncrf — <a href='{REPO_URL}'>{REPO_URL.replace('https://', '')}</a></p>"
                       + tr("<p>Software libre bajo la licencia GPL-3.0. Sin ninguna garantía.</p>"
                            "<p>Proyecto independiente: no está afiliado a Simplenote ni a Automattic.</p>"))
         text.setOpenExternalLinks(True)

@@ -30,6 +30,6 @@ if sys.platform == "darwin":
             "CFBundleVersion": VERSION,
             "LSUIElement": True,             # vive en la barra de menús, sin ícono en el Dock
             "NSHighResolutionCapable": True,
-            "NSHumanReadableCopyright": "© 2026 Frank — GPL-3.0-or-later",
+            "NSHumanReadableCopyright": "© 2026 FrankMncrf — GPL-3.0-or-later",
         },
     )

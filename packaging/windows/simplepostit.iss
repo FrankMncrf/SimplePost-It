@@ -8,7 +8,7 @@
 AppId={{6F0D6C1E-6A5B-4B7E-9D3C-5A1F2E8B9C47}
 AppName=SimplePost-It
 AppVersion={#Version}
-AppPublisher=Frank
+AppPublisher=FrankMncrf
 AppPublisherURL=https://github.com/FrankMncrf/SimplePost-It
 DefaultDirName={localappdata}\Programs\SimplePost-It
 DefaultGroupName=SimplePost-It

@@ -39,5 +39,5 @@ make install DESTDIR=%{buildroot} PREFIX=%{_prefix} LIBDIR=%{_prefix}/lib/simple
 %{_licensedir}/%{name}/
 
 %changelog
-* Tue Oct 27 2026 Frank <frank@simplepostit.invalid> - 1.0.0-1
+* Tue Oct 27 2026 FrankMncrf <frank@simplepostit.invalid> - 1.0.0-1
 - First public release

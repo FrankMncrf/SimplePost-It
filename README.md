@@ -132,4 +132,4 @@ SimplePost-It es gratuito y libre. Si te resulta útil, puedes apoyarlo:
 
 ## Licencia
 
-[GPL-3.0-or-later](LICENSE) © 2026 Frank. Simplenote es una marca de Automattic.
+[GPL-3.0-or-later](LICENSE) © 2026 FrankMncrf. Simplenote es una marca de Automattic.

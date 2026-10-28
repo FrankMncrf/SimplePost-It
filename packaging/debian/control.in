@@ -3,7 +3,7 @@ Version: @VERSION@-1
 Architecture: all
 Section: utils
 Priority: optional
-Maintainer: Frank <frank@simplepostit.invalid>
+Maintainer: FrankMncrf <frank@simplepostit.invalid>
 Depends: python3 (>= 3.10), python3-pyqt6
 Suggests: simplenote
 Homepage: https://github.com/FrankMncrf/SimplePost-It
