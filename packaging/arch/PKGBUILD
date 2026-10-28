@@ -9,7 +9,7 @@ license=('GPL-3.0-or-later')
 depends=('python' 'python-pyqt6')
 optdepends=('simplenote-electron-bin: the Simplenote desktop app whose session SimplePost-It uses')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('2e27b8822f52b52ea2946822fdbe8e72254308ac2d225507b8859e72f628899a')
+sha256sums=('0868b83880eb97e41725aef6db4c195fb36c3405271f7601fe68de53b555d2e2')
 
 check() {
     cd "SimplePost-It-$pkgver"
