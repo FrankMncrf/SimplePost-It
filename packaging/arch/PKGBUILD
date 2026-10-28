@@ -1,6 +1,6 @@
 # Maintainer: FrankMncrf <frank@simplepostit.invalid>
 pkgname=simplepostit
-pkgver=1.0.1
+pkgver=1.0.2
 pkgrel=1
 pkgdesc="Your pinned Simplenote notes as sticky notes on the desktop"
 arch=('any')

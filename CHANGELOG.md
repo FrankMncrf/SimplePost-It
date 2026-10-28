@@ -1,5 +1,10 @@
 # Novedades
 
+## 1.0.2 — 2026-10-28
+
+- Linux: al iniciar sesión, Simplenote vuelve a arrancar con la ventana oculta (se buscaba una ventana interna de Electron en vez de la principal).
+- Linux: cerrar Simplenote mientras SimplePost-It corre ya no puede cerrar SimplePost-It ni dejar procesos zombi.
+
 ## 1.0.1 — 2026-10-28
 
 - Clic derecho → «Mover a la papelera» manda la nota entera a la papelera de Simplenote (con confirmación).

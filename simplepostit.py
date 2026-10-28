@@ -59,7 +59,7 @@ from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDialog,  # noq
                              QKeySequenceEdit)
 
 APP = "SimplePost-It"
-VERSION = "1.0.1"
+VERSION = "1.0.2"
 REPO_URL = "https://github.com/FrankMncrf/SimplePost-It"
 # donaciones; un valor vacío oculta esa opción
 DONATE = {
@@ -1005,6 +1005,12 @@ class X11:
         x.XRaiseWindow.argtypes = [ctypes.c_void_p, ctypes.c_ulong]
         x.XFlush.argtypes = [ctypes.c_void_p]
         x.XFree.argtypes = [ctypes.c_void_p]
+        # una ventana de Simplenote puede cerrarse entre dos consultas: sin esto, el
+        # BadWindow de Xlib terminaría el proceso
+        handler = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p)
+        self._on_error = handler(lambda dpy, ev: 0)
+        x.XSetErrorHandler.argtypes = [handler]
+        x.XSetErrorHandler(self._on_error)
         self.x = x
         self.dpy = x.XOpenDisplay(None)
         self.root = x.XDefaultRootWindow(self.dpy) if self.dpy else 0
@@ -1080,15 +1086,16 @@ class X11:
         return size[0].value * size[1].value
 
     def find_class(self, wm_class):
-        """La ventana más grande con ese WM_CLASS (visible, o retirada por nosotros)."""
-        best, best_area = None, 0
+        """La ventana con ese WM_CLASS que maneja el gestor de ventanas (tiene WM_STATE) y,
+        entre ellas, la más grande: Electron crea además ventanas internas que nunca muestra."""
+        best, best_rank = None, (False, 0)
         for top in self.children(self.root):
             for win in [top] + self.children(top):  # el gestor de ventanas pone marcos
                 cls = self.prop(win, "WM_CLASS")
                 if cls and wm_class.lower() in cls.decode(errors="replace").lower().split("\0"):
-                    a = self.area(win)
-                    if a > best_area:
-                        best, best_area = win, a
+                    rank = (self.prop(win, "WM_STATE") is not None, self.area(win))
+                    if rank > best_rank:
+                        best, best_rank = win, rank
         return best
 
     def withdraw(self, win):
@@ -1115,6 +1122,7 @@ class SimplenoteApp(QObject):
         self.x11 = x11
         self.win = None          # ventana encontrada (X11) o HWND (Windows)
         self.waiting = None      # temporizador mientras arranca
+        self.proc = None
 
     # --- encontrar, abrir
     def command(self):
@@ -1144,6 +1152,8 @@ class SimplenoteApp(QObject):
         if IS_LINUX and self.x11.dpy:
             if not self.win or not self.x11.prop(self.win, "WM_CLASS"):
                 self.win = self.x11.find_class("simplenote")
+            elif self.x11.prop(self.win, "WM_STATE") is None:  # interna, o aún no se mostraba
+                self.win = self.x11.find_class("simplenote") or self.win
             return self.win
         if IS_WIN:
             if not self.win or not _user32().IsWindow(self.win):
@@ -1160,22 +1170,35 @@ class SimplenoteApp(QObject):
         cmd = self.command()
         if not cmd:
             return False
-        subprocess.Popen(cmd, cwd=os.path.expanduser("~"), stdin=subprocess.DEVNULL,
-                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=not IS_WIN)
-        if hidden:  # esperar a que aparezca su ventana para ocultarla
-            tries = [0]
-
-            def poll():
-                tries[0] += 1
-                if self.window() or (IS_MAC and _mac_app(self.BUNDLE)):
-                    QTimer.singleShot(600, self.hide)  # deja que termine de dibujarse
-                    self.waiting.stop()
-                elif tries[0] > 120:
-                    self.waiting.stop()
-            self.waiting = QTimer(self)
-            self.waiting.timeout.connect(poll)
-            self.waiting.start(250)
+        self.proc = subprocess.Popen(cmd, cwd=os.path.expanduser("~"), stdin=subprocess.DEVNULL,
+                                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                     start_new_session=not IS_WIN)
+        threading.Thread(target=self.proc.wait, daemon=True).start()  # sin procesos zombi
+        if hidden:
+            self.keep_hidden()
         return True
+
+    def keep_hidden(self, seconds=20):
+        """Oculta la ventana en cuanto se muestre y sigue vigilando un rato: Electron crea
+        la ventana antes de mostrarla (ocultarla entonces no sirve) y a veces la vuelve a
+        mostrar al terminar de cargar."""
+        if self.waiting:
+            self.waiting.stop()
+        tries = [0]
+
+        def poll():
+            tries[0] += 1
+            if self.running() and self.visible():
+                self.hide()
+            if tries[0] * 0.25 > seconds:
+                self.waiting.stop()
+        self.waiting = QTimer(self)
+        self.waiting.timeout.connect(poll)
+        self.waiting.start(250)
+
+    def stop_hiding(self):
+        if self.waiting:
+            self.waiting.stop()
 
     # --- mostrar / ocultar
     def visible(self):
@@ -1190,6 +1213,7 @@ class SimplenoteApp(QObject):
         return self.x11.visible(win)
 
     def show(self):
+        self.stop_hiding()
         if not self.running():
             return self.launch(hidden=False)
         if IS_MAC:
@@ -2372,7 +2396,7 @@ class App(QObject):
             if not self.simplenote.running():
                 QTimer.singleShot(1500, lambda: self.simplenote.launch(hidden=True))
             elif autostarted:
-                QTimer.singleShot(1500, self.simplenote.hide)
+                self.simplenote.keep_hidden()
 
     def on_tray(self, reason):
         if reason == QSystemTrayIcon.ActivationReason.Trigger and not IS_MAC:
