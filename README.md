@@ -19,7 +19,7 @@ SimplePost-It es una capa sobre Simplenote. Las notas que fijas en Simplenote (*
   - El botón **▦** las ordena en cuadrícula.
   - Las notas que fijas después buscan solas un hueco libre.
 - **Tareas:** las listas `- [ ]` de Simplenote se marcan con un clic, y la cinta muestra el avance (`2/5`).
-- **Editar sin abrir Simplenote:** doble clic en el cuerpo de la nota abre un mini editor. Desde ahí también se manda a la papelera.
+- **Editar sin abrir Simplenote:** doble clic en el cuerpo de la nota abre un mini editor. Desde ahí, o con clic derecho sobre la nota, también se manda a la papelera de Simplenote (la × solo la quita del escritorio).
 - **Simplenote siempre a mano:** doble clic en el título muestra Simplenote. SimplePost-It puede mantener Simplenote abierto en segundo plano con la ventana oculta, y mostrarla u ocultarla desde su ícono en la bandeja.
 - **Nueva nota:** el botón **+** crea una nota ya fijada, con o sin Markdown.
 - **Quitar del escritorio:** la **×** solo desfija la nota; la nota sigue en tu cuenta.

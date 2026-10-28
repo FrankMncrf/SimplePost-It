@@ -1,5 +1,10 @@
 # Novedades
 
+## 1.0.1 — 2026-10-28
+
+- Clic derecho → «Mover a la papelera» manda la nota entera a la papelera de Simplenote (con confirmación).
+- Linux: las notas ya no quedan detrás de conky u otros widgets de escritorio que arrancan después.
+
 ## 1.0.0 — 2026-10-27
 
 Primera versión pública, para Linux, Windows y macOS.

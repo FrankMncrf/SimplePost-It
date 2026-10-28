@@ -13,9 +13,9 @@
 # Se arrastran dentro de un tablero (posiciones, inclinación, color y minimizadas en
 # layout.json; Ctrl+rueda inclina la nota); un clic la pasa al frente, doble clic en el
 # título la abre en Simplenote y en el cuerpo abre el mini editor; el botón + crea una nota
-# y la × solo la quita del escritorio (la desfija); a la papelera únicamente desde el mini
-# editor. Clic en un "- [ ]" marca la tarea, Ctrl+clic abre el enlace, clic derecho: color,
-# minimizar y privada (etiqueta "privado": texto borroso hasta pasar el ratón). Las notas
+# y la × solo la quita del escritorio (la desfija); a la papelera desde el mini editor o
+# el clic derecho. Clic en un "- [ ]" marca la tarea, Ctrl+clic abre el enlace, clic derecho: color,
+# minimizar, privada, papelera (etiqueta "privado": texto borroso hasta pasar el ratón). Las notas
 # con Markdown activado muestran negritas, cursivas, `código`, bloques ```, subtítulos y
 # [enlaces](url) con nombre. El botón ▦ las ordena en cuadrícula.
 #   simplepostit              inicia (o, si ya está en marcha, muestra las notas)
@@ -59,7 +59,7 @@ from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDialog,  # noq
                              QKeySequenceEdit)
 
 APP = "SimplePost-It"
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 REPO_URL = "https://github.com/FrankMncrf/SimplePost-It"
 # donaciones; un valor vacío oculta esa opción
 DONATE = {
@@ -1002,6 +1002,7 @@ class X11:
                                  ctypes.POINTER(_XEvent)]
         x.XWithdrawWindow.argtypes = [ctypes.c_void_p, ctypes.c_ulong, ctypes.c_int]
         x.XMapRaised.argtypes = [ctypes.c_void_p, ctypes.c_ulong]
+        x.XRaiseWindow.argtypes = [ctypes.c_void_p, ctypes.c_ulong]
         x.XFlush.argtypes = [ctypes.c_void_p]
         x.XFree.argtypes = [ctypes.c_void_p]
         self.x = x
@@ -1047,6 +1048,19 @@ class X11:
         for a, b in (("_NET_WM_STATE_STICKY", "_NET_WM_STATE_BELOW"),
                      ("_NET_WM_STATE_SKIP_TASKBAR", "_NET_WM_STATE_SKIP_PAGER")):
             self.message(win, "_NET_WM_STATE", [1, self.atom(a), self.atom(b), 2])
+
+    def keep_over_below(self, win):
+        """Por encima de las otras ventanas «debajo» (p. ej. conky arrancado después),
+        sin salir de esa capa: sigue bajo las ventanas normales."""
+        if not self.dpy:
+            return
+        stack = self.prop(self.root, "_NET_CLIENT_LIST_STACKING") or []
+        if win not in stack:
+            return
+        below = self.atom("_NET_WM_STATE_BELOW")
+        if any(below in (self.prop(w, "_NET_WM_STATE") or []) for w in stack[stack.index(win) + 1:]):
+            self.x.XRaiseWindow(self.dpy, win)
+            self.x.XFlush(self.dpy)
 
     def children(self, win):
         root, parent, kids, n = ctypes.c_ulong(), ctypes.c_ulong(), ctypes.c_void_p(), ctypes.c_uint()
@@ -1385,6 +1399,19 @@ def xfce_shortcut(seq, old=""):
 # mini editor
 # ---------------------------------------------------------------------------
 
+def confirm_trash(title, parent=None):
+    """Pregunta antes de mandar la nota completa a la papelera de Simplenote."""
+    box = QMessageBox(QMessageBox.Icon.Question, tr("Mover a la papelera"),
+                      tr("¿Mover «{0}» a la papelera?").format(title), parent=parent)
+    box.setInformativeText(tr("Se puede recuperar desde la papelera de Simplenote."))
+    ok = box.addButton(tr("Mover a la papelera"), QMessageBox.ButtonRole.DestructiveRole)
+    box.addButton(tr("Cancelar"), QMessageBox.ButtonRole.RejectRole)
+    if parent is None:  # desde el tablero: que no quede detrás de las notas
+        box.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint)
+    box.exec()
+    return box.clickedButton() is ok
+
+
 class NoteEditor(QWidget):
     """Escribir una nota nueva o editar una existente; se guarda en la cuenta de Simplenote."""
     open_editors = []
@@ -1457,14 +1484,7 @@ class NoteEditor(QWidget):
         super().closeEvent(ev)
 
     def trash(self):
-        title = parse(self.original)[0]
-        box = QMessageBox(QMessageBox.Icon.Question, tr("Mover a la papelera"),
-                          tr("¿Mover «{0}» a la papelera?").format(title), parent=self)
-        box.setInformativeText(tr("Se puede recuperar desde la papelera de Simplenote."))
-        ok = box.addButton(tr("Mover a la papelera"), QMessageBox.ButtonRole.DestructiveRole)
-        box.addButton(tr("Cancelar"), QMessageBox.ButtonRole.RejectRole)
-        box.exec()
-        if box.clickedButton() is ok:
+        if confirm_trash(parse(self.original)[0], self):
             self.sync.request("trash", self.key)
             if self.on_trashed:
                 self.on_trashed(self.key)
@@ -1524,6 +1544,10 @@ class Board(QWidget):
         self.outline = False     # contorno del tablero (al arrastrar o en Ajustes)
         self.anim = QTimer(self)
         self.anim.timeout.connect(self.tick)
+        if IS_LINUX and x11.dpy:
+            self.restack = QTimer(self, interval=2000)
+            self.restack.timeout.connect(lambda: self.isVisible() and x11.keep_over_below(int(self.winId())))
+            self.restack.start()
         self.load_layout()
         sync.notes.connect(self.on_notes)
         sync.status.connect(self.on_status)
@@ -1950,7 +1974,15 @@ class Board(QWidget):
         private.setCheckable(True)
         private.setChecked(card.private)
         private.toggled.connect(lambda on: self.set_private(card, on))
+        menu.addSeparator()
+        menu.addAction(tr("Mover a la papelera"), lambda: self.trash(card))
         menu.exec(QCursor.pos())
+
+    def trash(self, card):
+        # la nota entera va a la papelera de Simplenote (la × solo la desfija)
+        if confirm_trash(card.title):
+            self.sync.request("trash", card.key)
+            self.trashed(card.key)
 
     def set_color(self, card, index):
         if index is None:
