@@ -38,6 +38,14 @@ jobs:
         run: |
           pip install PyQt6 pyinstaller pillow
           pyinstaller --noconfirm packaging/pyinstaller/simplepostit.spec
+      - name: Prueba de arranque
+        shell: pwsh
+        run: |
+          $env:QT_QPA_PLATFORM = "offscreen"
+          foreach ($arg in "--version", "--quit") {
+            $p = Start-Process -Wait -PassThru -FilePath dist\SimplePost-It\SimplePost-It.exe -ArgumentList $arg
+            if ($p.ExitCode -ne 0) { throw "SimplePost-It.exe $arg terminó con $($p.ExitCode)" }
+          }
       - name: Instalador
         shell: pwsh
         run: |
@@ -64,6 +72,12 @@ jobs:
         run: |
           pip install PyQt6 pyinstaller pillow pyobjc-framework-Cocoa
           pyinstaller --noconfirm packaging/pyinstaller/simplepostit.spec
+      - name: Prueba de arranque
+        run: |
+          app=dist/SimplePost-It.app/Contents/MacOS/SimplePost-It
+          $app --version
+          QT_QPA_PLATFORM=offscreen $app --quit
+          /usr/libexec/PlistBuddy -c "Print :LSUIElement" dist/SimplePost-It.app/Contents/Info.plist
       - name: DMG
         run: |
           v=$(sed -n 's/^VERSION = "\(.*\)"/\1/p' simplepostit.py)
