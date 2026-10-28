@@ -1,0 +1,14 @@
+name: Proponer una mejora / Feature request
+description: Una idea para SimplePost-It / An idea for SimplePost-It
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: ¿Qué te gustaría? / What would you like?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: ¿Para qué te serviría? / What would it help you with?

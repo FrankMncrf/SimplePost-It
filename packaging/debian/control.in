@@ -1,0 +1,15 @@
+Package: simplepostit
+Version: @VERSION@-1
+Architecture: all
+Section: utils
+Priority: optional
+Maintainer: Frank <frank@simplepostit.invalid>
+Depends: python3 (>= 3.10), python3-pyqt6
+Suggests: simplenote
+Homepage: https://github.com/FrankMncrf/SimplePost-It
+Description: Your pinned Simplenote notes as sticky notes on the desktop
+ Desktop layer for the Simplenote app: pinned notes appear as sticky notes
+ that can be arranged, read, checked off and edited without opening
+ Simplenote. Changes sync back to the Simplenote account. Supports
+ Markdown, to-do lists, private (blurred) notes and a tray icon that can
+ keep Simplenote running in the background with its window hidden.

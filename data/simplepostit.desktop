@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=SimplePost-It
+GenericName=Desktop sticky notes for Simplenote
+GenericName[es]=Post-its de Simplenote en el escritorio
+Comment=Your pinned Simplenote notes as sticky notes on the desktop
+Comment[es]=Tus notas fijadas de Simplenote como post-its en el escritorio
+Exec=simplepostit
+Icon=simplepostit
+Categories=Utility;
+Keywords=simplenote;notes;sticky;post-it;postit;notas;
+StartupNotify=false

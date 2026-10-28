@@ -1,0 +1,39 @@
+name: Reportar un error / Bug report
+description: Algo no funciona como debería / Something does not work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **No pegues el contenido de tus notas ni datos de tu cuenta de Simplenote.**
+        *Do not paste the content of your notes or details of your Simplenote account.*
+  - type: textarea
+    id: what
+    attributes:
+      label: ¿Qué pasó? / What happened?
+      description: Qué hiciste, qué esperabas y qué ocurrió / What you did, what you expected and what happened
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para reproducirlo / Steps to reproduce
+  - type: input
+    id: version
+    attributes:
+      label: Versión de SimplePost-It / SimplePost-It version
+      description: Ajustes → Acerca de / Settings → About
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Sistema y escritorio / OS and desktop
+      placeholder: "Windows 11 · macOS 15 · Ubuntu 24.04 GNOME (X11/Wayland) · Arch XFCE…"
+    validations:
+      required: true
+  - type: input
+    id: simplenote
+    attributes:
+      label: Versión de Simplenote y de dónde la instalaste / Simplenote version and where you installed it from
+      placeholder: "2.27.1 — simplenote.com, Microsoft Store, Mac App Store, Flatpak, AUR…"

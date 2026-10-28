@@ -1,0 +1,22 @@
+# Maintainer: Frank <frank@simplepostit.invalid>
+pkgname=simplepostit
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Your pinned Simplenote notes as sticky notes on the desktop"
+arch=('any')
+url="https://github.com/FrankMncrf/SimplePost-It"
+license=('GPL-3.0-or-later')
+depends=('python' 'python-pyqt6')
+optdepends=('simplenote-electron-bin: the Simplenote desktop app whose session SimplePost-It uses')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+check() {
+    cd "SimplePost-It-$pkgver"
+    QT_QPA_PLATFORM=offscreen make test
+}
+
+package() {
+    cd "SimplePost-It-$pkgver"
+    make install DESTDIR="$pkgdir" PREFIX=/usr
+}
