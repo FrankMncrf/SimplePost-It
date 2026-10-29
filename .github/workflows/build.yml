@@ -14,8 +14,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Dependencias
@@ -30,8 +30,8 @@ jobs:
     needs: test
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Ejecutable
@@ -53,7 +53,7 @@ jobs:
           $v = (Select-String -Path simplepostit.py -Pattern '^VERSION = "(.+)"').Matches[0].Groups[1].Value
           & "${env:ProgramFiles(x86)}\Inno Setup 6\iscc.exe" "/DVersion=$v" packaging\windows\simplepostit.iss
           Compress-Archive -Path dist\SimplePost-It -DestinationPath "dist\SimplePost-It-$v-windows-portable.zip"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: windows
           path: |
@@ -67,8 +67,8 @@ jobs:
         os: [macos-latest, macos-15-intel]   # Apple Silicon e Intel
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: App
@@ -86,7 +86,7 @@ jobs:
           v=$(sed -n 's/^VERSION = "\(.*\)"/\1/p' simplepostit.py)
           hdiutil create -volname SimplePost-It -srcfolder dist/SimplePost-It.app -ov -format UDZO \
             "dist/SimplePost-It-$v-macos-$(uname -m).dmg"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.os }}
           path: dist/*.dmg
@@ -95,7 +95,7 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: .deb
         run: packaging/debian/build-deb.sh
       - name: .rpm
@@ -106,7 +106,7 @@ jobs:
           docker run --rm -v ~/rpmbuild:/root/rpmbuild -v "$PWD/packaging/rpm:/spec" fedora:latest \
             sh -c "dnf install -y -q rpm-build make python3-pyqt6 && rpmbuild -ba --nocheck /spec/simplepostit.spec"
           cp ~/rpmbuild/RPMS/noarch/*.rpm dist/
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: linux
           path: dist/*
@@ -116,13 +116,13 @@ jobs:
     needs: [windows, macos, linux]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: out
           merge-multiple: true
       - name: Sumas SHA256
         run: cd out && sha256sum * > SHA256SUMS
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           files: out/*
           fail_on_unmatched_files: true

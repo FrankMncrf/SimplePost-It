@@ -16,7 +16,7 @@ jobs:
     env:
       SIMPLEPOSTIT_NO_OPEN: "1"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: macOS
         if: runner.os == 'macOS'
         run: |
@@ -32,6 +32,18 @@ jobs:
           ./packaging/windows/install.ps1
           $exe = Join-Path $env:LOCALAPPDATA 'Programs\SimplePost-It\SimplePost-It.exe'
           if (-not (Test-Path $exe)) { throw 'no se instaló' }
+          # sin firma, ¿lo confunde Windows Defender con malware?
+          $status = Get-MpComputerStatus -ErrorAction SilentlyContinue
+          if (-not $status -or -not $status.AntivirusEnabled) {
+            Write-Host '::warning::Windows Defender está desactivado en esta máquina: no se pudo analizar'
+          } else {
+            Update-MpSignature -ErrorAction SilentlyContinue
+            $dir = Split-Path $exe
+            Start-MpScan -ScanType CustomScan -ScanPath $dir
+            $hits = Get-MpThreatDetection | Where-Object { $_.Resources -match 'SimplePost-It' }
+            if ($hits) { $hits | Format-List; throw 'Windows Defender marcó archivos de SimplePost-It' }
+            Write-Host "Windows Defender ($($status.AntivirusSignatureVersion)): sin detecciones en $dir"
+          }
 
   install-linux:
     strategy:
@@ -49,7 +61,7 @@ jobs:
           elif command -v apt-get >/dev/null; then apt-get update -qq && apt-get install -y -qq curl ca-certificates
           elif command -v dnf >/dev/null; then dnf install -y -q curl
           else zypper --non-interactive install curl tar gzip; fi
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Instalador
         run: |
           bash packaging/linux/install.sh
