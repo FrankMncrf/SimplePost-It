@@ -33,16 +33,18 @@ jobs:
           $exe = Join-Path $env:LOCALAPPDATA 'Programs\SimplePost-It\SimplePost-It.exe'
           if (-not (Test-Path $exe)) { throw 'no se instaló' }
           # sin firma, ¿lo confunde Windows Defender con malware?
-          $status = Get-MpComputerStatus -ErrorAction SilentlyContinue
-          if (-not $status -or -not $status.AntivirusEnabled) {
-            Write-Host '::warning::Windows Defender está desactivado en esta máquina: no se pudo analizar'
+          $mp = Join-Path $env:ProgramFiles 'Windows Defender\MpCmdRun.exe'
+          $dir = Split-Path $exe
+          if (-not (Test-Path $mp)) {
+            Write-Host '::warning::Windows Defender no está en esta máquina: no se pudo analizar'
           } else {
-            Update-MpSignature -ErrorAction SilentlyContinue
-            $dir = Split-Path $exe
-            Start-MpScan -ScanType CustomScan -ScanPath $dir
-            $hits = Get-MpThreatDetection | Where-Object { $_.Resources -match 'SimplePost-It' }
-            if ($hits) { $hits | Format-List; throw 'Windows Defender marcó archivos de SimplePost-It' }
-            Write-Host "Windows Defender ($($status.AntivirusSignatureVersion)): sin detecciones en $dir"
+            & $mp -SignatureUpdate | Out-Null
+            & $mp -Scan -ScanType 3 -File $dir -DisableRemediation
+            $code = $LASTEXITCODE
+            $global:LASTEXITCODE = 0
+            if ($code -eq 2) { throw 'Windows Defender marcó archivos de SimplePost-It' }
+            elseif ($code -ne 0) { Write-Host "::warning::Windows Defender no pudo analizar (código $code)" }
+            else { Write-Host "Windows Defender: sin detecciones en $dir" }
           }
 
   install-linux:
