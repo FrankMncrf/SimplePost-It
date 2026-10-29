@@ -62,7 +62,10 @@ jobs:
 
   macos:
     needs: test
-    runs-on: macos-latest
+    strategy:
+      matrix:
+        os: [macos-latest, macos-15-intel]   # Apple Silicon e Intel
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -85,7 +88,7 @@ jobs:
             "dist/SimplePost-It-$v-macos-$(uname -m).dmg"
       - uses: actions/upload-artifact@v4
         with:
-          name: macos
+          name: ${{ matrix.os }}
           path: dist/*.dmg
 
   linux:
@@ -123,3 +126,31 @@ jobs:
         with:
           files: out/*
           fail_on_unmatched_files: true
+
+  # los instaladores por script contra la versión recién publicada
+  install-scripts:
+    needs: release
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, macos-15-intel, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      SIMPLEPOSTIT_NO_OPEN: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - name: macOS
+        if: runner.os == 'macOS'
+        run: |
+          bash packaging/macos/install.sh
+          app=/Applications/SimplePost-It.app
+          [ -d "$app" ] || app="$HOME/Applications/SimplePost-It.app"
+          "$app/Contents/MacOS/SimplePost-It" --version
+          ! xattr -p com.apple.quarantine "$app" 2>/dev/null
+      - name: Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          ./packaging/windows/install.ps1
+          $exe = Join-Path $env:LOCALAPPDATA 'Programs\SimplePost-It\SimplePost-It.exe'
+          if (-not (Test-Path $exe)) { throw 'no se instaló' }

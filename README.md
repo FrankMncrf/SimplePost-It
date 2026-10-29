@@ -50,12 +50,30 @@ SimplePost-It es una capa sobre Simplenote. Las notas que fijas en Simplenote (*
 
 ## Instalación
 
-Descarga la última versión desde [Releases](https://github.com/FrankMncrf/SimplePost-It/releases).
+### macOS y Windows: con una línea (recomendado)
+
+Los instaladores no llevan firma de pago de Apple ni de Microsoft, así que si los descargas con el navegador el sistema los frena. Estos comandos descargan e instalan la última versión sin ese bloqueo, solo para tu usuario y sin pedir contraseña de administrador. También sirven para actualizar.
+
+**macOS** (Apple Silicon o Intel), en Terminal:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/FrankMncrf/SimplePost-It/main/packaging/macos/install.sh | bash
+```
+
+**Windows 10/11**, en PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/FrankMncrf/SimplePost-It/main/packaging/windows/install.ps1 | iex
+```
+
+### Descarga manual
+
+Desde [Releases](https://github.com/FrankMncrf/SimplePost-It/releases):
 
 | Sistema | Archivo |
 |---|---|
 | Windows | `SimplePost-It-…-windows-setup.exe`, o la versión portable `.zip` |
-| macOS | `SimplePost-It-…-macos-arm64.dmg`: arrastra la app a Aplicaciones |
+| macOS | `SimplePost-It-…-macos-arm64.dmg` (Apple Silicon) o `…-macos-x86_64.dmg` (Intel): arrastra la app a Aplicaciones |
 | Debian / Ubuntu | `simplepostit_…_all.deb` |
 | Fedora / openSUSE | `simplepostit-….noarch.rpm` |
 | Arch / CachyOS / Manjaro | `simplepostit-….pkg.tar.zst`, o `PKGBUILD` |
@@ -68,9 +86,10 @@ cd SimplePost-It
 ./install.sh              # ./install.sh --uninstall para quitarlo
 ```
 
-**macOS:** la app no está firmada por Apple. La primera vez ábrela con clic derecho → **Abrir**, o ejecuta `xattr -dr com.apple.quarantine /Applications/SimplePost-It.app`.
+Si descargaste a mano:
 
-**Windows:** SmartScreen puede avisar porque el instalador no está firmado. Elige **Más información → Ejecutar de todas formas**.
+- **macOS** dirá que la app no está firmada. Ábrela una vez y luego ve a **Ajustes del Sistema → Privacidad y seguridad → Abrir igualmente**. O ejecuta `xattr -dr com.apple.quarantine /Applications/SimplePost-It.app`.
+- **Windows:** si SmartScreen avisa, elige **Más información → Ejecutar de todas formas**. Si **Control inteligente de aplicaciones** de Windows 11 está activado, bloquea cualquier programa sin firma y no deja ejecutarlo; usa el comando de PowerShell de arriba. Si aun así lo bloquea, por ahora no hay otra salida que esperar la versión firmada.
 
 La primera vez se abren los Ajustes y SimplePost-It se agrega al inicio de sesión (se puede desactivar). Para cambiar algo después, haz clic derecho en el ícono de la bandeja → **Ajustes…**.
 

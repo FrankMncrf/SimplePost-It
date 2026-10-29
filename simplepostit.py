@@ -1223,6 +1223,28 @@ class SimplenoteApp(QObject):
         if self.waiting:
             self.waiting.stop()
 
+    def keep_running(self):
+        """Con «segundo plano» activado: si se cierra la ventana de Simplenote (lo que en
+        Windows y Linux cierra la app), se vuelve a abrir oculta, como si solo se hubiera
+        ocultado. Sin tocar Simplenote: solo se vigila desde fuera."""
+        self.was_running = self.running()
+        self.relaunches = []
+
+        def check():
+            # recién lanzado, la ventana tarda en aparecer: el proceso vivo también cuenta
+            running = self.running() or bool(self.proc and self.proc.poll() is None)
+            if self.was_running and not running and SETTINGS["simplenote_background"]:
+                now = time.monotonic()
+                self.relaunches = [t for t in self.relaunches if now - t < 300]
+                if len(self.relaunches) < 3:  # si falla al arrancar, no insistir sin fin
+                    self.relaunches.append(now)
+                    self.launch(hidden=True)
+                    running = True
+            self.was_running = running
+        self.watchdog = QTimer(self, interval=5000)
+        self.watchdog.timeout.connect(check)
+        self.watchdog.start()
+
     # --- mostrar / ocultar
     def visible(self):
         if IS_MAC:
@@ -2211,6 +2233,7 @@ class SettingsDialog(QDialog):
         auto.toggled.connect(self.set_autostart)
         form.addRow(auto)
         bg = QCheckBox(tr("Mantener Simplenote abierto en segundo plano (ventana oculta)"))
+        bg.setToolTip(tr("Al iniciar sesión se abre oculto, y si cierras su ventana vuelve a quedar abierto en segundo plano."))
         bg.setToolTip(tr("SimplePost-It abre Simplenote al iniciar y oculta su ventana; se muestra con "
                          "doble clic en el título de una nota o desde el ícono de la bandeja."))
         bg.setChecked(bool(SETTINGS["simplenote_background"]))
@@ -2490,6 +2513,7 @@ class App(QObject):
                 QTimer.singleShot(1500, lambda: self.simplenote.launch(hidden=True))
             elif autostarted:
                 self.simplenote.keep_hidden()
+        self.simplenote.keep_running()
 
     def on_tray(self, reason):
         if reason == QSystemTrayIcon.ActivationReason.Trigger and not IS_MAC:

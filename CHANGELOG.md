@@ -1,5 +1,11 @@
 # Novedades
 
+## Sin publicar
+
+- Si cierras la ventana de Simplenote, vuelve a abrirse oculto en segundo plano (con «Mantener Simplenote abierto en segundo plano»), sin modificar Simplenote.
+- Instalación con una línea en macOS y Windows, sin el bloqueo de Gatekeeper/SmartScreen para apps sin firma de pago.
+- Versión para Mac con procesador Intel.
+
 ## 1.1.0 — 2026-10-28
 
 - El tablero se puede colocar en cualquier parte: con Ajustes abierto, arrastra un espacio vacío del tablero para moverlo (también a otro monitor).

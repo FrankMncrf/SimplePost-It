@@ -16,6 +16,7 @@
  "Activa Markdown en Simplenote: **negrita**, *cursiva*, `código`, ## subtítulos, [enlace](url)": "Turns on Markdown in Simplenote: **bold**, *italic*, `code`, ## headings, [link](url)",
  "Ajustes de SimplePost-It": "SimplePost-It settings",
  "Ajustes…": "Settings…",
+ "Al iniciar sesión se abre oculto, y si cierras su ventana vuelve a quedar abierto en segundo plano.": "It starts hidden at login, and if you close its window it stays open in the background.",
  "Alto del tablero": "Board height",
  "Amarillo": "Yellow",
  "Ancho del tablero": "Board width",
