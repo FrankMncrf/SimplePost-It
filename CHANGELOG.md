@@ -1,6 +1,6 @@
 # Novedades
 
-## Sin publicar
+## 1.2.0 — 2026-10-28
 
 - Si cierras la ventana de Simplenote, vuelve a abrirse oculto en segundo plano (con «Mantener Simplenote abierto en segundo plano»), sin modificar Simplenote.
 - Instalación con una línea en macOS y Windows, sin el bloqueo de Gatekeeper/SmartScreen para apps sin firma de pago.
