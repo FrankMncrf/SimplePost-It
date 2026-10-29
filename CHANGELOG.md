@@ -1,8 +1,9 @@
 # Novedades
 
-## Sin publicar
+## 1.2.1 — 2026-10-28
 
 - Instalación con una línea también en Linux: instala el paquete de tu distribución (Arch, Debian/Ubuntu, Fedora, openSUSE) o, si no hay, desde el código en ~/.local.
+- El paquete .rpm ya se instala en openSUSE (PyQt6 se llama python3-PyQt6 ahí).
 
 ## 1.2.0 — 2026-10-28
 
