@@ -20,9 +20,10 @@ else
 fi
 
 echo "Buscando la última versión…"
-release=$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest")
-tag=$(printf '%s' "$release" | grep -o '"tag_name": *"[^"]*"' | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
-[ -n "$tag" ] || { echo "No pude consultar las versiones en GitHub." >&2; exit 1; }
+# sin la API de GitHub (limita las consultas anónimas): la página de la última versión
+tag=$(curl -fsSLo /dev/null -w '%{url_effective}' "https://github.com/$REPO/releases/latest")
+tag=${tag##*/}
+case "$tag" in v[0-9]*) ;; *) echo "No pude consultar las versiones en GitHub." >&2; exit 1 ;; esac
 
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
@@ -38,9 +39,10 @@ if [ "$kind" = "source" ]; then
     exit 0
 fi
 
-url=$(printf '%s' "$release" | grep -o "\"browser_download_url\": *\"[^\"]*\.$kind\"" | head -1 \
-      | sed 's/.*"\(https[^"]*\)"$/\1/')
-[ -n "$url" ] || { echo "No hay paquete .$kind en $tag." >&2; exit 1; }
+path=$(curl -fsSL "https://github.com/$REPO/releases/expanded_assets/$tag" \
+       | grep -o "/$REPO/releases/download/$tag/[^\"]*\.$kind" | head -1)
+[ -n "$path" ] || { echo "No hay paquete .$kind en $tag." >&2; exit 1; }
+url="https://github.com$path"
 file="$tmp/$(basename "$url")"
 echo "Descargando $(basename "$url")…"
 curl -fL --progress-bar -o "$file" "$url"

@@ -13,9 +13,13 @@ case "$(uname -m)" in
 esac
 
 echo "Buscando la última versión…"
-url=$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" \
-      | grep -o "\"browser_download_url\": *\"[^\"]*-macos-$arch\.dmg\"" | head -1 | sed 's/.*"\(https[^"]*\)"/\1/')
-[ -n "$url" ] || { echo "No hay un .dmg para $arch en la última versión." >&2; exit 1; }
+# sin la API de GitHub (limita las consultas anónimas): la página de la última versión
+tag=$(curl -fsSLo /dev/null -w '%{url_effective}' "https://github.com/$REPO/releases/latest")
+tag=${tag##*/}
+path=$(curl -fsSL "https://github.com/$REPO/releases/expanded_assets/$tag" \
+       | grep -o "/$REPO/releases/download/$tag/[^\"]*-macos-$arch\.dmg" | head -1)
+[ -n "$path" ] || { echo "No hay un .dmg para $arch en $tag." >&2; exit 1; }
+url="https://github.com$path"
 
 tmp=$(mktemp -d)
 trap 'hdiutil detach -quiet "$tmp/mnt" 2>/dev/null || true; rm -rf "$tmp"' EXIT

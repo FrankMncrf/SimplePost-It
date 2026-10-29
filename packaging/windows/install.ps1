@@ -8,9 +8,15 @@ $ProgressPreference = 'SilentlyContinue'   # Invoke-WebRequest es mucho mas rapi
 $repo = 'FrankMncrf/SimplePost-It'
 
 Write-Host 'Buscando la ultima version...'
-$release = Invoke-RestMethod "https://api.github.com/repos/$repo/releases/latest"
-$asset = $release.assets | Where-Object { $_.name -like '*-windows-setup.exe' } | Select-Object -First 1
-if (-not $asset) { throw 'No hay instalador de Windows en la ultima version.' }
+# sin la API de GitHub (limita las consultas anonimas): la pagina de la ultima version
+$page = Invoke-WebRequest "https://github.com/$repo/releases/latest" -UseBasicParsing
+$tag = [regex]::Match($page.Content, "/$repo/releases/tag/(v[0-9][^`"/?#]*)").Groups[1].Value
+if (-not $tag) { throw 'No pude consultar las versiones en GitHub.' }
+$assets = Invoke-WebRequest "https://github.com/$repo/releases/expanded_assets/$tag" -UseBasicParsing
+$path = [regex]::Match($assets.Content, "/$repo/releases/download/$tag/[^`"]*-windows-setup\.exe").Value
+if (-not $path) { throw "No hay instalador de Windows en $tag." }
+$asset = [pscustomobject]@{ name = $path.Split('/')[-1]; browser_download_url = "https://github.com$path" }
+$release = [pscustomobject]@{ tag_name = $tag }
 
 $setup = Join-Path $env:TEMP $asset.name
 Write-Host "Descargando $($asset.name)..."
