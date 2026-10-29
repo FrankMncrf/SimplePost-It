@@ -50,9 +50,15 @@ SimplePost-It es una capa sobre Simplenote. Las notas que fijas en Simplenote (*
 
 ## Instalación
 
-### macOS y Windows: con una línea (recomendado)
+Copia el comando de tu sistema. Descarga la última versión y la instala. Para actualizar, vuelve a ejecutarlo.
 
-Los instaladores no llevan firma de pago de Apple ni de Microsoft, así que si los descargas con el navegador el sistema los frena. Estos comandos descargan e instalan la última versión sin ese bloqueo, solo para tu usuario y sin pedir contraseña de administrador. También sirven para actualizar.
+**Linux** (Arch/CachyOS/Manjaro, Debian/Ubuntu/Mint, Fedora, openSUSE), en una terminal:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/FrankMncrf/SimplePost-It/main/packaging/linux/install.sh | bash
+```
+
+Instala el paquete de tu distribución y pide tu contraseña para eso. En otras distribuciones, o si antepones `SIMPLEPOSTIT_USER=1` a `bash`, lo instala desde el código solo para tu usuario, en `~/.local`.
 
 **macOS** (Apple Silicon o Intel), en Terminal:
 
@@ -65,6 +71,8 @@ curl -fsSL https://raw.githubusercontent.com/FrankMncrf/SimplePost-It/main/packa
 ```powershell
 irm https://raw.githubusercontent.com/FrankMncrf/SimplePost-It/main/packaging/windows/install.ps1 | iex
 ```
+
+En macOS y Windows se instala solo para tu usuario y sin contraseña de administrador. Los archivos no llevan firma de pago de Apple ni de Microsoft. Por eso, si los descargas con el navegador, el sistema los frena; con estos comandos no.
 
 ### Descarga manual
 

@@ -1,0 +1,56 @@
+# Prueba los instaladores de una línea (packaging/*/install.*) contra la última versión
+# publicada: tras cada release, o a mano desde Actions.
+name: Instaladores
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  install-scripts:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, macos-15-intel, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      SIMPLEPOSTIT_NO_OPEN: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - name: macOS
+        if: runner.os == 'macOS'
+        run: |
+          bash packaging/macos/install.sh
+          app=/Applications/SimplePost-It.app
+          [ -d "$app" ] || app="$HOME/Applications/SimplePost-It.app"
+          "$app/Contents/MacOS/SimplePost-It" --version
+          ! xattr -p com.apple.quarantine "$app" 2>/dev/null
+      - name: Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          ./packaging/windows/install.ps1
+          $exe = Join-Path $env:LOCALAPPDATA 'Programs\SimplePost-It\SimplePost-It.exe'
+          if (-not (Test-Path $exe)) { throw 'no se instaló' }
+
+  install-linux:
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ["archlinux:latest", "debian:stable", "ubuntu:24.04", "fedora:latest", "opensuse/tumbleweed"]
+    runs-on: ubuntu-latest
+    container: ${{ matrix.image }}
+    env:
+      SIMPLEPOSTIT_NO_OPEN: "1"
+    steps:
+      - name: Base del contenedor
+        run: |
+          if command -v pacman >/dev/null; then pacman -Syu --noconfirm curl
+          elif command -v apt-get >/dev/null; then apt-get update -qq && apt-get install -y -qq curl ca-certificates
+          elif command -v dnf >/dev/null; then dnf install -y -q curl
+          else zypper --non-interactive install curl tar gzip; fi
+      - uses: actions/checkout@v4
+      - name: Instalador
+        run: |
+          bash packaging/linux/install.sh
+          QT_QPA_PLATFORM=offscreen simplepostit --version

@@ -42,5 +42,9 @@ stop
 make install PREFIX="$PREFIX" >/dev/null
 command -v update-desktop-database >/dev/null && update-desktop-database ~/.local/share/applications 2>/dev/null || true
 case ":$PATH:" in *":$PREFIX/bin:"*) ;; *) echo "Aviso: agrega $PREFIX/bin a tu PATH." >&2 ;; esac
-(cd ~ && setsid "$PREFIX/bin/simplepostit" >/dev/null 2>&1 </dev/null &)
-echo "SimplePost-It instalado e iniciado. Ajustes: clic derecho en su ícono de la bandeja."
+if [ -z "$SIMPLEPOSTIT_NO_OPEN" ]; then
+    (cd ~ && setsid "$PREFIX/bin/simplepostit" >/dev/null 2>&1 </dev/null &)
+    echo "SimplePost-It instalado e iniciado. Ajustes: clic derecho en su ícono de la bandeja."
+else
+    echo "SimplePost-It instalado."
+fi

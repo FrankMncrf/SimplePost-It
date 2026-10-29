@@ -1,5 +1,9 @@
 # Novedades
 
+## Sin publicar
+
+- Instalación con una línea también en Linux: instala el paquete de tu distribución (Arch, Debian/Ubuntu, Fedora, openSUSE) o, si no hay, desde el código en ~/.local.
+
 ## 1.2.0 — 2026-10-28
 
 - Si cierras la ventana de Simplenote, vuelve a abrirse oculto en segundo plano (con «Mantener Simplenote abierto en segundo plano»), sin modificar Simplenote.
