@@ -1,5 +1,5 @@
 Name:           simplepostit
-Version:        1.0.2
+Version:        1.1.0
 Release:        1%{?dist}
 Summary:        Your pinned Simplenote notes as sticky notes on the desktop
 License:        GPL-3.0-or-later
@@ -39,6 +39,9 @@ make install DESTDIR=%{buildroot} PREFIX=%{_prefix} LIBDIR=%{_prefix}/lib/simple
 %{_licensedir}/%{name}/
 
 %changelog
+* Wed Oct 28 2026 FrankMncrf <57369835+FrankMncrf@users.noreply.github.com> - 1.1.0-1
+- Board can be dragged anywhere, reference corner option, follows monitor changes
+
 * Wed Oct 28 2026 FrankMncrf <57369835+FrankMncrf@users.noreply.github.com> - 1.0.2-1
 - Linux: Simplenote starts hidden again at login; closing it no longer leaves zombies
 

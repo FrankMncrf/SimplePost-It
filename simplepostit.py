@@ -59,7 +59,7 @@ from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDialog,  # noq
                              QKeySequenceEdit)
 
 APP = "SimplePost-It"
-VERSION = "1.0.2"
+VERSION = "1.1.0"
 REPO_URL = "https://github.com/FrankMncrf/SimplePost-It"
 # donaciones; un valor vacío oculta esa opción
 DONATE = {
@@ -114,8 +114,9 @@ DEFAULTS = {
     "board_width": 760,
     "board_height": 560,
     "monitor": -1,             # -1 = principal
-    "right": 30,               # distancia al borde derecho del monitor
-    "top": 205,                # distancia al borde superior
+    "anchor": "top_right",     # esquina del monitor desde la que se mide la posición
+    "offset_x": 30,            # distancia al borde izquierdo o derecho (según la esquina)
+    "offset_y": 205,           # distancia al borde superior o inferior
     "poll": 10,                # segundos entre lecturas de Simplenote
     "token": "",               # sesión propia (Ajustes → Cuenta) si no se usa la de Simplenote
 }
@@ -127,6 +128,8 @@ def load_settings():
             data = json.load(f)
     except (OSError, ValueError):
         data = {}
+    if "offset_x" not in data and "right" in data:  # 1.0.x: siempre desde arriba a la derecha
+        data["offset_x"], data["offset_y"] = data["right"], data.get("top", DEFAULTS["offset_y"])
     return {k: data.get(k, v) for k, v in DEFAULTS.items()}
 
 
@@ -141,6 +144,26 @@ def save_settings(settings):
 
 
 SETTINGS = load_settings()
+
+ANCHORS = ("top_left", "top_right", "bottom_left", "bottom_right")
+
+
+def board_origin(screen, size, anchor, ox, oy):
+    """Esquina superior izquierda del tablero (x, y) dentro del monitor (x, y, ancho, alto)."""
+    sx, sy, sw, sh = screen
+    w, h = size
+    x = sx + ox if anchor.endswith("left") else sx + sw - ox - w
+    y = sy + oy if anchor.startswith("top") else sy + sh - oy - h
+    return x, y
+
+
+def board_offsets(screen, pos, size, anchor):
+    """Lo inverso: distancias a los bordes de la esquina elegida (nunca negativas)."""
+    sx, sy, sw, sh = screen
+    (x, y), (w, h) = pos, size
+    ox = x - sx if anchor.endswith("left") else sx + sw - x - w
+    oy = y - sy if anchor.startswith("top") else sy + sh - y - h
+    return max(0, round(ox)), max(0, round(oy))
 
 
 def _ui_language():
@@ -1533,6 +1556,7 @@ class NoteEditor(QWidget):
 
 class Board(QWidget):
     """Ventana transparente sobre el escritorio, bajo las demás ventanas, con las notas."""
+    moved = pyqtSignal()   # el tablero se arrastró a otro sitio (con Ajustes abierto)
 
     def __init__(self, sync, x11, simplenote):
         flags = (Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool
@@ -1559,6 +1583,7 @@ class Board(QWidget):
         self.colors = {}         # id -> índice de PALETTE elegido a mano
         self.collapsed = set()   # notas minimizadas (solo el título)
         self.drag = None         # [card, dx, dy, x0, y0, movida]
+        self.board_drag = None   # puntero - esquina del tablero, al arrastrar el tablero entero
         self.hover = None        # nota bajo el puntero
         self.hover_del = self.hover_plus = self.hover_grid = False
         self.hidden = set()      # notas desfijadas o en la papelera, aún en la última lista
@@ -1572,6 +1597,16 @@ class Board(QWidget):
             self.restack = QTimer(self, interval=2000)
             self.restack.timeout.connect(lambda: self.isVisible() and x11.keep_over_below(int(self.winId())))
             self.restack.start()
+        # monitores conectados o quitados (p. ej. el dock), otro principal u otra resolución:
+        # volver a colocar el tablero cuando la pantalla se asiente
+        self.replace_timer = QTimer(self, singleShot=True, interval=1500)
+        self.replace_timer.timeout.connect(self.resize_board)
+        qapp = QGuiApplication.instance()
+        qapp.primaryScreenChanged.connect(self.screens_changed)
+        qapp.screenAdded.connect(self.screens_changed)
+        qapp.screenRemoved.connect(self.screens_changed)
+        for screen in qapp.screens():
+            screen.geometryChanged.connect(self.replace_timer.start)
         self.load_layout()
         sync.notes.connect(self.on_notes)
         sync.status.connect(self.on_status)
@@ -1588,8 +1623,29 @@ class Board(QWidget):
     def resize_board(self):
         w, h = BOARD_W + 2 * MARGIN, BOARD_H + 2 * MARGIN
         self.setFixedSize(w, h)
-        geo = self.screen_geometry()
-        self.move(geo.x() + geo.width() - int(SETTINGS["right"]) - w, geo.y() + int(SETTINGS["top"]))
+        g = self.screen_geometry()
+        anchor = SETTINGS["anchor"] if SETTINGS["anchor"] in ANCHORS else "top_right"
+        self.move(*board_origin((g.x(), g.y(), g.width(), g.height()), (w, h), anchor,
+                                int(SETTINGS["offset_x"]), int(SETTINGS["offset_y"])))
+
+    def screens_changed(self, screen=None):
+        if screen is not None and screen in QGuiApplication.screens():  # recién conectado
+            screen.geometryChanged.connect(self.replace_timer.start)
+        self.replace_timer.start()
+
+    def store_position(self):
+        """Guarda dónde está ahora el tablero: monitor y distancias a la esquina elegida."""
+        screens = QGuiApplication.screens()
+        screen = QGuiApplication.screenAt(self.geometry().center()) or self.screen()
+        if screen in screens and not (SETTINGS["monitor"] == -1
+                                      and screen is QGuiApplication.primaryScreen()):
+            SETTINGS["monitor"] = screens.index(screen)
+        g = self.screen_geometry()
+        anchor = SETTINGS["anchor"] if SETTINGS["anchor"] in ANCHORS else "top_right"
+        SETTINGS["offset_x"], SETTINGS["offset_y"] = board_offsets(
+            (g.x(), g.y(), g.width(), g.height()), (self.x(), self.y()), (self.width(), self.height()), anchor)
+        save_settings(SETTINGS)
+        self.moved.emit()
 
     def showEvent(self, ev):
         super().showEvent(ev)
@@ -1856,6 +1912,9 @@ class Board(QWidget):
             return
         card = self.card_at(x, y)
         if card is None:
+            if self.outline:  # con Ajustes abierto: arrastrar el tablero entero
+                self.board_drag = ev.globalPosition().toPoint() - self.geometry().topLeft()
+                self.setCursor(Qt.CursorShape.ClosedHandCursor)
             return
         if on_delete(card, x, y):  # × = desfijar, no borra la nota
             self.unpin(card)
@@ -1895,6 +1954,9 @@ class Board(QWidget):
 
     def mouseMoveEvent(self, ev):
         x, y = ev.position().x(), ev.position().y()
+        if self.board_drag is not None:
+            self.move(ev.globalPosition().toPoint() - self.board_drag)
+            return
         if self.drag:
             card, dx, dy, x0, y0, moved = self.drag
             if not moved and abs(x - x0) + abs(y - y0) > 4:
@@ -1915,9 +1977,15 @@ class Board(QWidget):
             self.hover_plus, self.hover_grid, self.hover, self.hover_del = state
             self.update()
         on = hover_plus or hover_grid or card is not None
-        self.setCursor(Qt.CursorShape.PointingHandCursor if on else Qt.CursorShape.ArrowCursor)
+        self.setCursor(Qt.CursorShape.PointingHandCursor if on else
+                       Qt.CursorShape.OpenHandCursor if self.outline else Qt.CursorShape.ArrowCursor)
 
     def mouseReleaseEvent(self, ev):
+        if self.board_drag is not None and ev.button() == Qt.MouseButton.LeftButton:
+            self.board_drag = None
+            self.setCursor(Qt.CursorShape.OpenHandCursor)
+            self.store_position()
+            return
         if self.drag and ev.button() == Qt.MouseButton.LeftButton:
             card, moved = self.drag[0], self.drag[5]
             self.drag = None
@@ -2225,12 +2293,23 @@ class SettingsDialog(QDialog):
         form.addRow(tr("Monitor"), mon)
         form.addRow(tr("Ancho del tablero"), self.spin("board_width", 200, 4000, " px"))
         form.addRow(tr("Alto del tablero"), self.spin("board_height", 200, 3000, " px"))
-        form.addRow(tr("Distancia al borde derecho"), self.spin("right", 0, 4000, " px"))
-        form.addRow(tr("Distancia al borde superior"), self.spin("top", 0, 3000, " px"))
+        anchor = QComboBox()
+        for key, name in zip(ANCHORS, (tr("Arriba a la izquierda"), tr("Arriba a la derecha"),
+                                       tr("Abajo a la izquierda"), tr("Abajo a la derecha"))):
+            anchor.addItem(name, key)
+        anchor.setCurrentIndex(max(0, anchor.findData(SETTINGS["anchor"])))
+        anchor.currentIndexChanged.connect(lambda _i: self.set_anchor(anchor.currentData()))
+        form.addRow(tr("Esquina de referencia"), anchor)
+        self.offset_x, self.offset_y = self.spin("offset_x", 0, 4000, " px"), self.spin("offset_y", 0, 3000, " px")
+        form.addRow(tr("Distancia horizontal al borde"), self.offset_x)
+        form.addRow(tr("Distancia vertical al borde"), self.offset_y)
+        self.monitor_box = mon
+        self.app.board.moved.connect(self.on_board_moved)
         arrange = QPushButton(tr("Ordenar las notas en cuadrícula"))
         arrange.clicked.connect(self.app.board.arrange)
         form.addRow("", arrange)
-        hint = QLabel(tr("<small>Mientras esta ventana está abierta se ve el contorno del tablero.</small>"))
+        hint = QLabel(tr("<small>Mientras esta ventana está abierta se ve el contorno del tablero; "
+                         "arrastra un espacio vacío del tablero para moverlo a donde quieras.</small>"))
         hint.setWordWrap(True)
         form.addRow("", hint)
         return w
@@ -2332,6 +2411,20 @@ class SettingsDialog(QDialog):
         if ok:
             self.old_hotkey = seq
             self.changed("hotkey", seq)
+
+    def set_anchor(self, anchor):
+        # el tablero no se mueve: solo cambia desde qué esquina se mide
+        SETTINGS["anchor"] = anchor
+        self.app.board.store_position()
+
+    def on_board_moved(self):
+        for box, key in ((self.offset_x, "offset_x"), (self.offset_y, "offset_y")):
+            box.blockSignals(True)
+            box.setValue(int(SETTINGS[key]))
+            box.blockSignals(False)
+        self.monitor_box.blockSignals(True)
+        self.monitor_box.setCurrentIndex(max(0, self.monitor_box.findData(int(SETTINGS["monitor"]))))
+        self.monitor_box.blockSignals(False)
 
     def showEvent(self, ev):
         super().showEvent(ev)

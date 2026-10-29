@@ -180,6 +180,32 @@ class SettingsTests(unittest.TestCase):
         if os.name == "posix":
             self.assertEqual(os.stat(sp.SETTINGS_FILE).st_mode & 0o777, 0o600)
 
+    def test_old_position_keys_migrate(self):
+        with open(sp.SETTINGS_FILE, "w", encoding="utf-8") as f:
+            json.dump({"right": 40, "top": 100}, f)
+        s = sp.load_settings()
+        self.assertEqual((s["anchor"], s["offset_x"], s["offset_y"]), ("top_right", 40, 100))
+        self.assertNotIn("right", s)
+
+
+class PositionTests(unittest.TestCase):
+    SCREEN = (1920, 0, 1920, 1080)  # segundo monitor, a la derecha del primero
+
+    def test_each_corner(self):
+        size = (800, 600)
+        self.assertEqual(sp.board_origin(self.SCREEN, size, "top_left", 10, 20), (1930, 20))
+        self.assertEqual(sp.board_origin(self.SCREEN, size, "top_right", 10, 20), (3030, 20))
+        self.assertEqual(sp.board_origin(self.SCREEN, size, "bottom_left", 10, 20), (1930, 460))
+        self.assertEqual(sp.board_origin(self.SCREEN, size, "bottom_right", 10, 20), (3030, 460))
+
+    def test_offsets_are_inverse(self):
+        size = (800, 600)
+        for anchor in sp.ANCHORS:
+            pos = sp.board_origin(self.SCREEN, size, anchor, 37, 81)
+            self.assertEqual(sp.board_offsets(self.SCREEN, pos, size, anchor), (37, 81))
+        # fuera del monitor: nunca distancias negativas
+        self.assertEqual(sp.board_offsets(self.SCREEN, (1900, -5), size, "top_left"), (0, 0))
+
 
 class TranslationTests(unittest.TestCase):
     def test_catalog_complete(self):

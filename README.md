@@ -37,7 +37,7 @@ SimplePost-It es una capa sobre Simplenote. Las notas que fijas en Simplenote (*
 - **Ajustes:**
   - Inicio con la sesión, idioma y atajo.
   - Número máximo de notas, opacidad, tamaño, inclinación y fuente.
-  - Tamaño, monitor y posición del tablero.
+  - Tamaño, monitor y posición del tablero: elige la esquina de referencia, o arrastra el tablero entero mientras Ajustes está abierto. Si conectas o quitas un monitor, el tablero se recoloca solo.
   - Cuenta.
   - Acerca de y donaciones.
 

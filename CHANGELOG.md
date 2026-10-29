@@ -1,5 +1,11 @@
 # Novedades
 
+## 1.1.0 — 2026-10-28
+
+- El tablero se puede colocar en cualquier parte: con Ajustes abierto, arrastra un espacio vacío del tablero para moverlo (también a otro monitor).
+- Nueva opción «Esquina de referencia»: la posición se mide desde cualquier esquina del monitor.
+- Al conectar o quitar un monitor (p. ej. un dock), cambiar el principal o la resolución, el tablero se recoloca solo.
+
 ## 1.0.2 — 2026-10-28
 
 - Linux: al iniciar sesión, Simplenote vuelve a arrancar con la ventana oculta (se buscaba una ventana interna de Electron en vez de la principal).
