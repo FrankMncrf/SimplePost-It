@@ -2222,9 +2222,9 @@ class LoginDialog(QDialog):
         self.setWindowTitle(tr("Iniciar sesión en Simplenote"))
         self.token = None
         lay = QVBoxLayout(self)
-        info = QLabel(tr("Solo hace falta si SimplePost-It no puede usar la sesión de la app de "
-                         "Simplenote (por ejemplo, con la versión de la Mac App Store). La contraseña "
-                         "no se guarda: solo la sesión."))
+        info = QLabel(tr("Con tu cuenta de Simplenote. No hace falta si la app de Simplenote está instalada "
+                         "y con la sesión iniciada, salvo que SimplePost-It no pueda leer esa sesión. La "
+                         "contraseña no se guarda: solo la sesión."))
         info.setWordWrap(True)
         lay.addWidget(info)
         form = QFormLayout()

@@ -91,7 +91,7 @@
  "Sin conexión\nSe vuelve a intentar cada pocos segundos.": "Offline\nRetrying every few seconds.",
  "Sin notas fijadas\nFija una nota en Simplenote (Pin to top) o crea una con +.": "No pinned notes\nPin a note in Simplenote (Pin to top) or create one with +.",
  "Sin título": "Untitled",
- "Solo hace falta si SimplePost-It no puede usar la sesión de la app de Simplenote (por ejemplo, con la versión de la Mac App Store). La contraseña no se guarda: solo la sesión.": "Only needed if SimplePost-It cannot use the session of the Simplenote app (for example, with the Mac App Store version). The password is not stored: only the session.",
+ "Con tu cuenta de Simplenote. No hace falta si la app de Simplenote está instalada y con la sesión iniciada, salvo que SimplePost-It no pueda leer esa sesión. La contraseña no se guarda: solo la sesión.": "With your Simplenote account. Not needed if the Simplenote app is installed and signed in, unless SimplePost-It cannot read that session. The password is not stored: only the session.",
  "Tablero": "Board",
  "Tamaño de las notas": "Note size",
  "Usando la sesión de la app de escritorio de Simplenote.": "Using the session of the Simplenote desktop app.",

@@ -4,7 +4,7 @@
 
 SimplePost-It es una capa sobre Simplenote. Las notas que fijas en Simplenote (*Pin to top*) aparecen en el escritorio como post-its que puedes acomodar, leer, marcar y editar sin abrir la app. Todo lo que cambias en el widget se guarda en tu cuenta de Simplenote y llega a tus otros dispositivos.
 
-*English: SimplePost-It is a desktop layer for Simplenote on Linux, Windows and macOS. It shows your pinned Simplenote notes as sticky notes on the desktop; changes sync back to your Simplenote account. It needs the Simplenote desktop app, installed and signed in. The interface is available in Spanish and English.*
+*English: SimplePost-It is a desktop layer for Simplenote on Linux, Windows and macOS. It shows your pinned Simplenote notes as sticky notes on the desktop; changes sync back to your Simplenote account. It needs a Simplenote account: it uses the session of the Simplenote desktop app if installed (recommended), or you can sign in directly in SimplePost-It. The interface is available in Spanish and English.*
 
 ![SimplePost-It](docs/screenshot.png)
 
@@ -43,7 +43,9 @@ SimplePost-It es una capa sobre Simplenote. Las notas que fijas en Simplenote (*
 
 ## Requisitos
 
-- **La app de escritorio de Simplenote**, instalada y con la sesión iniciada. Descárgala de [simplenote.com](https://simplenote.com), o en Linux desde tu distribución, Flatpak o Snap.
+- **Una cuenta de Simplenote.** Hay dos formas de conectarla:
+  - **Con la app de escritorio de Simplenote (recomendado):** si está instalada y con la sesión iniciada, SimplePost-It usa esa sesión sin pedirte nada, y el doble clic en el título abre Simplenote. Descárgala de [simplenote.com](https://simplenote.com), o en Linux desde tu distribución, Flatpak o Snap.
+  - **Sin instalar Simplenote:** inicia sesión en SimplePost-It con tu correo y contraseña (**Ajustes → Cuenta**). Solo se guarda la sesión, no la contraseña. Ves, editas y creas tus notas fijadas igual; para fijar otras notas o buscar en todas usa [app.simplenote.com](https://app.simplenote.com).
   - En macOS, la versión de la Mac App Store guarda su sesión en el Llavero: al abrir SimplePost-It, macOS pide permiso para leerla (elige **Permitir siempre**). Si lo rechazas, inicia sesión una vez en SimplePost-It: **Ajustes → Cuenta**.
 - **Linux:** Python 3.10+ y PyQt6, con un escritorio X11 o XWayland y compositor (para la transparencia). Se probó en XFCE.
 - **Windows 10/11** y **macOS 12+:** no necesitan nada más, porque el instalador incluye todo.
