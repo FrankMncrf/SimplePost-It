@@ -1601,6 +1601,7 @@ class NoteEditor(QWidget):
         screen = QGuiApplication.primaryScreen().availableGeometry()
         self.move(screen.center().x() - self.width() // 2, screen.center().y() - self.height() // 2)
         NoteEditor.open_editors.append(self)
+        mac_activate()
         self.show()
         self.raise_()
         self.activateWindow()
@@ -1650,7 +1651,8 @@ class Board(QWidget):
 
     def __init__(self, sync, x11, simplenote):
         flags = (Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool
-                 | Qt.WindowType.WindowStaysOnBottomHint | Qt.WindowType.WindowDoesNotAcceptFocus)
+                 | Qt.WindowType.WindowStaysOnBottomHint | Qt.WindowType.WindowDoesNotAcceptFocus
+                 | Qt.WindowType.NoDropShadowWindowHint)  # macOS: sin contorno negro alrededor de las notas
         super().__init__(None, flags)
         self.sync, self.x11, self.simplenote = sync, x11, simplenote
         self.setWindowTitle(APP)
@@ -1751,7 +1753,10 @@ class Board(QWidget):
                 from AppKit import NSWindowCollectionBehaviorCanJoinAllSpaces, NSWindowCollectionBehaviorStationary
                 view = objc.objc_object(c_void_p=int(self.winId()))
                 win = view.window()
-                win.setLevel_(-2147483623 + 20)  # justo sobre el escritorio (kCGDesktopWindowLevel)
+                # justo sobre los íconos del escritorio (kCGDesktopIconWindowLevel + 1): al mismo nivel,
+                # Finder recibe los clics (no se pueden mover las notas y el clic "muestra el escritorio")
+                win.setLevel_(-2147483603 + 1)
+                win.setHasShadow_(False)
                 win.setCollectionBehavior_(NSWindowCollectionBehaviorCanJoinAllSpaces
                                            | NSWindowCollectionBehaviorStationary)
             except Exception:  # sin pyobjc: queda como ventana normal "abajo"
@@ -2205,6 +2210,17 @@ class Board(QWidget):
 # ajustes, acerca de, donaciones
 # ---------------------------------------------------------------------------
 
+def mac_activate():
+    """macOS: SimplePost-It vive en la barra de menús, sin Dock; si no se activa, sus ventanas no
+    reciben el teclado (no se puede escribir el correo ni la contraseña)."""
+    if IS_MAC:
+        try:
+            from AppKit import NSApplication
+            NSApplication.sharedApplication().activateIgnoringOtherApps_(True)
+        except ImportError:
+            pass
+
+
 def hotkey_note():
     if IS_MAC:
         return tr("En macOS el atajo global no está disponible; usa el ícono de la barra de menús.")
@@ -2606,6 +2622,7 @@ class App(QObject):
         conn.disconnectFromServer()
 
     def open_settings(self, about=False):
+        mac_activate()
         if self.settings is None:
             self.settings = SettingsDialog(self)
             self.settings.finished.connect(lambda _r: setattr(self, "settings", None))
