@@ -1,5 +1,11 @@
 # Novedades
 
+## 1.2.2 — 2026-10-30
+
+- macOS: arreglado el inicio de sesión y la conexión con Simplenote (la app no encontraba los certificados HTTPS del sistema).
+- macOS: con Simplenote de la Mac App Store, la sesión se lee del Llavero (macOS pide permiso la primera vez: elige «Permitir siempre»).
+- Si no se puede conectar al iniciar sesión, se muestra el motivo.
+
 ## 1.2.1 — 2026-10-28
 
 - Instalación con una línea también en Linux: instala el paquete de tu distribución (Arch, Debian/Ubuntu, Fedora, openSUSE) o, si no hay, desde el código en ~/.local.
