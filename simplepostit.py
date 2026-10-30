@@ -60,7 +60,7 @@ from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDialog,  # noq
                              QKeySequenceEdit)
 
 APP = "SimplePost-It"
-VERSION = "1.2.2"
+VERSION = "1.2.3"
 REPO_URL = "https://github.com/FrankMncrf/SimplePost-It"
 # donaciones; un valor vacío oculta esa opción
 DONATE = {

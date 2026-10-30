@@ -1,5 +1,11 @@
 # Novedades
 
+## 1.2.3 — 2026-10-30
+
+- Se puede usar sin instalar Simplenote: inicia sesión con tu cuenta en Ajustes → Cuenta. La app de Simplenote sigue siendo lo recomendado.
+- Windows: compatible con Simplenote de Microsoft Store (lee su sesión y lo abre).
+- Windows: también busca Simplenote en Program Files (x86).
+
 ## 1.2.2 — 2026-10-30
 
 - macOS: arreglado el inicio de sesión y la conexión con Simplenote (la app no encontraba los certificados HTTPS del sistema).

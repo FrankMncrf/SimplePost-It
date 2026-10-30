@@ -1,5 +1,5 @@
 Name:           simplepostit
-Version:        1.2.2
+Version:        1.2.3
 Release:        1%{?dist}
 Summary:        Your pinned Simplenote notes as sticky notes on the desktop
 License:        GPL-3.0-or-later
@@ -40,6 +40,9 @@ make install DESTDIR=%{buildroot} PREFIX=%{_prefix} LIBDIR=%{_prefix}/lib/simple
 %{_licensedir}/%{name}/
 
 %changelog
+* Fri Oct 30 2026 FrankMncrf <57369835+FrankMncrf@users.noreply.github.com> - 1.2.3-1
+- Windows: Microsoft Store Simplenote; usable without Simplenote installed (own sign-in)
+
 * Fri Oct 30 2026 FrankMncrf <57369835+FrankMncrf@users.noreply.github.com> - 1.2.2-1
 - macOS: HTTPS certificates in the app bundle; Simplenote session from the Keychain
 
