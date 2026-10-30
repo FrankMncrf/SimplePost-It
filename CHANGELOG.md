@@ -1,5 +1,12 @@
 # Novedades
 
+## 1.2.4 — 2026-10-30
+
+- Inicio de sesión con un código enviado a tu correo (como en la app de Simplenote). El inicio con contraseña depende de un servidor de Simplenote que a veces no responde.
+- macOS: las notas se pueden mover y abrir (antes Finder se quedaba los clics y el doble clic mostraba el escritorio).
+- macOS: sin la línea negra alrededor de las notas.
+- macOS: Ajustes y el editor reciben el teclado al abrirse.
+
 ## 1.2.3 — 2026-10-30
 
 - Se puede usar sin instalar Simplenote: inicia sesión con tu cuenta en Ajustes → Cuenta. La app de Simplenote sigue siendo lo recomendado.
