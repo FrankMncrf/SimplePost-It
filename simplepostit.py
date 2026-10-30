@@ -30,6 +30,7 @@ import os
 import queue
 import re
 import shutil
+import ssl
 import subprocess
 import sys
 import threading
@@ -817,6 +818,25 @@ API = f"https://api.simperium.com/1/{SIMPERIUM_APP}/note/"
 AUTH = f"https://auth.simperium.com/1/{SIMPERIUM_APP}/authorize/"
 
 
+def ssl_context():
+    """Certificados para HTTPS. El Python empaquetado en la app de macOS no encuentra los del
+    sistema (sin esto, toda conexión falla): se usan los de certifi o el cert.pem de macOS."""
+    ctx = ssl.create_default_context()
+    if IS_MAC:
+        try:
+            import certifi
+            ctx.load_verify_locations(certifi.where())
+        except (ImportError, OSError):
+            try:
+                ctx.load_verify_locations("/etc/ssl/cert.pem")
+            except OSError:
+                pass
+    return ctx
+
+
+SSL_CONTEXT = ssl_context()
+
+
 def simplenote_profiles():
     """Carpetas de datos de la app de escritorio de Simplenote (Electron) en cada sistema."""
     home = os.path.expanduser("~")
@@ -830,9 +850,31 @@ def simplenote_profiles():
             os.path.join(home, "snap/simplenote/current/.config/Simplenote")]             # Snap
 
 
-def simplenote_token():
-    """Token de la sesión de la app de escritorio de Simplenote: el "stored_user" de su
-    localStorage (LevelDB). Solo se lee; si no hay sesión devuelve None."""
+_keychain = {"tried": False, "token": None}
+
+
+def keychain_token(retry=False):
+    """macOS: la app nativa de Simplenote (Mac App Store) guarda el token en el Llavero, con el
+    id de la app de Simperium como servicio. Solo se lee. macOS pide permiso ("Permitir siempre"
+    evita repetirlo), así que se intenta una vez por ejecución y no en cada lectura."""
+    if retry:
+        _keychain["tried"] = False
+    if not _keychain["tried"]:
+        _keychain["tried"] = True
+        try:
+            out = subprocess.run(["security", "find-generic-password", "-s", SIMPERIUM_APP, "-w"],
+                                 capture_output=True, text=True, timeout=120)
+            token = out.stdout.strip()
+            _keychain["token"] = token if out.returncode == 0 and re.fullmatch(r"[0-9a-f]{20,}", token) else None
+        except (OSError, subprocess.SubprocessError):
+            _keychain["token"] = None
+    return _keychain["token"]
+
+
+def simplenote_token(retry=False):
+    """Token de la sesión de la app de Simplenote: el "stored_user" del localStorage (LevelDB)
+    de la app de escritorio o, en macOS, el Llavero de la app nativa. Solo se lee; si no hay
+    sesión devuelve None."""
     files = []
     for profile in simplenote_profiles():
         storage = os.path.join(profile, "Local Storage", "leveldb")
@@ -848,7 +890,7 @@ def simplenote_token():
             continue
         if found:
             return found[-1].decode()
-    return None
+    return keychain_token(retry) if IS_MAC else None
 
 
 def session_token():
@@ -861,7 +903,7 @@ def simperium_login(email, password):
     req = urllib.request.Request(AUTH, data=json.dumps({"username": email, "password": password}).encode(),
                                  headers={"X-Simperium-API-Key": SIMPERIUM_KEY,
                                           "Content-Type": "application/json"}, method="POST")
-    with urllib.request.urlopen(req, timeout=30) as f:
+    with urllib.request.urlopen(req, timeout=30, context=SSL_CONTEXT) as f:
         return json.load(f)["access_token"]
 
 
@@ -902,7 +944,7 @@ class Sync(QObject):
                                      headers={"X-Simperium-Token": token,
                                               "Content-Type": "application/json"},
                                      method="GET" if body is None else "POST")
-        with urllib.request.urlopen(req, timeout=30) as f:
+        with urllib.request.urlopen(req, timeout=30, context=SSL_CONTEXT) as f:
             data = f.read()
         return json.loads(data) if data.strip() else None
 
@@ -968,6 +1010,8 @@ class Sync(QObject):
                     self.notes.emit(self.fetch(token))
                 except (PermissionError, urllib.error.HTTPError) as e:
                     nologin = isinstance(e, PermissionError) or e.code == 401
+                    if nologin and token == _keychain["token"]:
+                        _keychain["token"] = None  # caducada: se vuelve a leer desde Ajustes → Cuenta
                     self.status.emit("nologin" if nologin else "offline")
                 except (OSError, ValueError, KeyError, TypeError):
                     self.status.emit("offline")
@@ -2178,11 +2222,12 @@ class LoginDialog(QDialog):
     def login(self):
         try:
             self.token = simperium_login(self.email.text().strip(), self.password.text())
-        except urllib.error.HTTPError:
-            self.error.setText(tr("Correo o contraseña incorrectos."))
+        except urllib.error.HTTPError as e:
+            self.error.setText(tr("Correo o contraseña incorrectos.") if e.code in (400, 401, 403)
+                               else f"{tr('No se pudo conectar con Simplenote.')} (HTTP {e.code})")
             return
-        except (OSError, ValueError, KeyError):
-            self.error.setText(tr("No se pudo conectar con Simplenote."))
+        except (OSError, ValueError, KeyError) as e:
+            self.error.setText(f"{tr('No se pudo conectar con Simplenote.')}\n{getattr(e, 'reason', e)}")
             return
         self.accept()
 
@@ -2369,7 +2414,7 @@ class SettingsDialog(QDialog):
         own = bool(SETTINGS["token"])
         if own:
             text = tr("Sesión propia de SimplePost-It.")
-        elif simplenote_token():
+        elif simplenote_token(retry=True):
             text = tr("Usando la sesión de la app de escritorio de Simplenote.")
         else:
             text = tr("No se encontró la sesión de Simplenote. Abre Simplenote e inicia sesión, o inicia "

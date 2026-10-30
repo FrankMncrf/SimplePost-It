@@ -73,7 +73,7 @@ jobs:
           python-version: "3.12"
       - name: App
         run: |
-          pip install PyQt6 pyinstaller pillow pyobjc-framework-Cocoa
+          pip install PyQt6 pyinstaller pillow pyobjc-framework-Cocoa certifi
           pyinstaller --noconfirm packaging/pyinstaller/simplepostit.spec
       - name: Prueba de arranque
         run: |
