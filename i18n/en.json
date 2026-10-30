@@ -97,5 +97,14 @@
  "Usando la sesión de la app de escritorio de Simplenote.": "Using the session of the Simplenote desktop app.",
  "Uso: simplepostit [--toggle | --settings]\n\n  (sin opciones)   inicia SimplePost-It (o muestra las notas si ya está en marcha)\n  --toggle         oculta o muestra las notas\n  --settings       abre los ajustes\n  --quit           cierra SimplePost-It\n": "Usage: simplepostit [--toggle | --settings]\n\n  (no options)     starts SimplePost-It (or shows the notes if it is already running)\n  --toggle         hides or shows the notes\n  --settings       opens the settings\n  --quit           quits SimplePost-It\n",
  "¿Mover «{0}» a la papelera?": "Move “{0}” to the trash?",
- "★  Dar una estrella en GitHub": "★  Star it on GitHub"
+ "★  Dar una estrella en GitHub": "★  Star it on GitHub",
+ "Enviarme un código": "Email me a code",
+ "El código que llegó a tu correo": "The code sent to your email",
+ "O tu contraseña": "Or your password",
+ "Código": "Code",
+ "Escribe tu correo.": "Enter your email.",
+ "Te enviamos un código a {0}. Escríbelo arriba y pulsa Aceptar.": "We sent a code to {0}. Enter it above and press OK.",
+ "El código no es válido o ya caducó.": "The code is invalid or has expired.",
+ "Pulsa «Enviarme un código» o escribe tu contraseña.": "Press “Email me a code” or enter your password.",
+ "Prueba con «Enviarme un código».": "Try “Email me a code”."
 }

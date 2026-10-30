@@ -816,6 +816,7 @@ SIMPERIUM_APP = "chalk-bump-f49"
 SIMPERIUM_KEY = "a46d4d2a87444c33b8fc77e3662791b4"
 API = f"https://api.simperium.com/1/{SIMPERIUM_APP}/note/"
 AUTH = f"https://auth.simperium.com/1/{SIMPERIUM_APP}/authorize/"
+ACCOUNT = "https://app.simplenote.com/account/"   # inicio de sesión con código por correo
 
 
 def ssl_context():
@@ -912,6 +913,25 @@ def simperium_login(email, password):
                                           "Content-Type": "application/json"}, method="POST")
     with urllib.request.urlopen(req, timeout=30, context=SSL_CONTEXT) as f:
         return json.load(f)["access_token"]
+
+
+def simplenote_account(path, body):
+    req = urllib.request.Request(ACCOUNT + path, data=json.dumps(body).encode(),
+                                 headers={"Content-Type": "application/json"}, method="POST")
+    with urllib.request.urlopen(req, timeout=30, context=SSL_CONTEXT) as f:
+        data = f.read()
+    return json.loads(data) if data.strip() else {}
+
+
+def request_login_code(email):
+    """Simplenote envía un código de acceso al correo (como en su app de escritorio)."""
+    simplenote_account("request-login", {"username": email.strip().lower(), "request_source": "electron"})
+
+
+def complete_login(email, code):
+    """Código del correo → sesión. No usa auth.simperium.com (el inicio con contraseña)."""
+    return simplenote_account("complete-login", {"username": email.strip().lower(),
+                                                  "auth_code": code.strip().upper()})["sync_token"]
 
 
 def parse_records(raw):
@@ -2231,7 +2251,7 @@ def hotkey_note():
 
 
 class LoginDialog(QDialog):
-    """Inicio de sesión propio con correo y contraseña de Simplenote (Simperium)."""
+    """Inicio de sesión propio en Simplenote: con un código enviado al correo o con la contraseña."""
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -2245,11 +2265,23 @@ class LoginDialog(QDialog):
         lay.addWidget(info)
         form = QFormLayout()
         self.email = QLineEdit()
+        send = QPushButton(tr("Enviarme un código"))
+        send.clicked.connect(self.send_code)
+        row = QHBoxLayout()
+        row.addWidget(self.email, 1)
+        row.addWidget(send)
+        self.code = QLineEdit()
+        self.code.setPlaceholderText(tr("El código que llegó a tu correo"))
         self.password = QLineEdit()
+        self.password.setPlaceholderText(tr("O tu contraseña"))
         self.password.setEchoMode(QLineEdit.EchoMode.Password)
-        form.addRow(tr("Correo"), self.email)
+        form.addRow(tr("Correo"), row)
+        form.addRow(tr("Código"), self.code)
         form.addRow(tr("Contraseña"), self.password)
         lay.addLayout(form)
+        self.sent = QLabel()
+        self.sent.setWordWrap(True)
+        lay.addWidget(self.sent)
         self.error = QLabel()
         self.error.setStyleSheet("color: #c0392b")
         lay.addWidget(self.error)
@@ -2259,15 +2291,55 @@ class LoginDialog(QDialog):
         lay.addWidget(buttons)
         self.setMinimumWidth(420)
 
+    def connection_error(self, e):
+        reason = f"HTTP {e.code}" if isinstance(e, urllib.error.HTTPError) else getattr(e, "reason", e)
+        self.error.setText(f"{tr('No se pudo conectar con Simplenote.')}\n{reason}")
+
+    def send_code(self):
+        self.error.clear()
+        if not self.email.text().strip():
+            self.error.setText(tr("Escribe tu correo."))
+            return
+        try:
+            request_login_code(self.email.text())
+        except (OSError, ValueError) as e:
+            self.connection_error(e)
+            return
+        self.sent.setText(tr("Te enviamos un código a {0}. Escríbelo arriba y pulsa Aceptar.").format(
+            self.email.text().strip()))
+        self.code.setFocus()
+
     def login(self):
+        self.error.clear()
+        if self.code.text().strip():
+            try:
+                self.token = complete_login(self.email.text(), self.code.text())
+            except urllib.error.HTTPError as e:
+                if e.code == 400:
+                    self.error.setText(tr("El código no es válido o ya caducó."))
+                else:
+                    self.connection_error(e)
+                return
+            except (OSError, ValueError, KeyError) as e:
+                self.connection_error(e)
+                return
+            self.accept()
+            return
+        if not self.password.text():
+            self.error.setText(tr("Pulsa «Enviarme un código» o escribe tu contraseña."))
+            return
         try:
             self.token = simperium_login(self.email.text().strip(), self.password.text())
         except urllib.error.HTTPError as e:
-            self.error.setText(tr("Correo o contraseña incorrectos.") if e.code in (400, 401, 403)
-                               else f"{tr('No se pudo conectar con Simplenote.')} (HTTP {e.code})")
+            if e.code in (400, 401, 403):
+                self.error.setText(tr("Correo o contraseña incorrectos."))
+            else:
+                self.connection_error(e)
             return
         except (OSError, ValueError, KeyError) as e:
-            self.error.setText(f"{tr('No se pudo conectar con Simplenote.')}\n{getattr(e, 'reason', e)}")
+            self.connection_error(e)
+            if "timed out" in str(getattr(e, "reason", e)):
+                self.error.setText(self.error.text() + "\n" + tr("Prueba con «Enviarme un código»."))
             return
         self.accept()
 
