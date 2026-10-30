@@ -841,7 +841,14 @@ def simplenote_profiles():
     """Carpetas de datos de la app de escritorio de Simplenote (Electron) en cada sistema."""
     home = os.path.expanduser("~")
     if IS_WIN:
-        return [os.path.join(os.environ.get("APPDATA", home), "Simplenote")]
+        # Versión de Microsoft Store: Windows desvía su AppData a la carpeta del paquete
+        packages = os.path.join(os.environ.get("LOCALAPPDATA", home), "Packages")
+        try:
+            store = [os.path.join(packages, d, "LocalCache", "Roaming", "Simplenote")
+                     for d in os.listdir(packages) if "simplenote" in d.lower()]
+        except OSError:
+            store = []
+        return [os.path.join(os.environ.get("APPDATA", home), "Simplenote")] + store
     if IS_MAC:
         return [os.path.join(home, "Library/Application Support/Simplenote")]
     conf = os.environ.get("XDG_CONFIG_HOME") or os.path.join(home, ".config")
@@ -1194,12 +1201,14 @@ class SimplenoteApp(QObject):
     # --- encontrar, abrir
     def command(self):
         if IS_WIN:
-            for base in (os.environ.get("LOCALAPPDATA", ""), os.environ.get("PROGRAMFILES", "")):
+            for base in (os.environ.get("LOCALAPPDATA", ""), os.environ.get("PROGRAMFILES", ""),
+                         os.environ.get("PROGRAMFILES(X86)", "")):
                 for rel in ("Programs\\simplenote\\Simplenote.exe", "Simplenote\\Simplenote.exe"):
                     path = os.path.join(base, rel)
                     if os.path.exists(path):
                         return [path]
-            return None
+            app_id = self.store_app_id()
+            return ["explorer.exe", f"shell:AppsFolder\\{app_id}"] if app_id else None
         if IS_MAC:
             return ["open", "-g", "-b", self.BUNDLE]
         for path in ("/usr/bin/simplenote", "/opt/Simplenote/simplenote", "/snap/bin/simplenote"):
@@ -1211,6 +1220,21 @@ class SimplenoteApp(QObject):
         if shutil.which("flatpak"):
             return ["flatpak", "run", "com.simplenote.Simplenote"]
         return None
+
+    def store_app_id(self):
+        """Versión de Microsoft Store: no tiene un .exe que se pueda abrir directamente; se abre
+        por su id de aplicación (se busca una vez con Get-StartApps)."""
+        if not hasattr(self, "_store_id"):
+            self._store_id = None
+            try:
+                out = subprocess.run(["powershell", "-NoProfile", "-Command",
+                                      "(Get-StartApps | Where-Object Name -eq 'Simplenote' | "
+                                      "Select-Object -First 1).AppID"],
+                                     capture_output=True, text=True, timeout=30, creationflags=0x08000000)
+                self._store_id = out.stdout.strip() or None
+            except (OSError, subprocess.SubprocessError):
+                pass
+        return self._store_id
 
     def installed(self):
         return self.command() is not None or any(os.path.isdir(p) for p in simplenote_profiles())
