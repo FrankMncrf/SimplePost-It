@@ -1,5 +1,5 @@
 Name:           simplepostit
-Version:        1.2.5
+Version:        1.2.6
 Release:        1%{?dist}
 Summary:        Your pinned Simplenote notes as sticky notes on the desktop
 License:        GPL-3.0-or-later
@@ -40,6 +40,9 @@ make install DESTDIR=%{buildroot} PREFIX=%{_prefix} LIBDIR=%{_prefix}/lib/simple
 %{_licensedir}/%{name}/
 
 %changelog
+* Sat Oct 31 2026 FrankMncrf <57369835+FrankMncrf@users.noreply.github.com> - 1.2.6-1
+- Editor: Markdown and Private checkboxes for every note, no trash button
+
 * Sat Oct 31 2026 FrankMncrf <57369835+FrankMncrf@users.noreply.github.com> - 1.2.5-1
 - Editor: separate title field, Private checkbox, checklist button
 

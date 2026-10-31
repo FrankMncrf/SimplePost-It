@@ -1,5 +1,10 @@
 # Novedades
 
+## 1.2.6 — 2026-10-31
+
+- Editor: las casillas «Markdown» y «Privada» están abajo en todas las notas; al editar una nota se puede activar o quitar Markdown.
+- Editor: sin el botón «Mover a la papelera» (sigue en el clic derecho sobre la nota).
+
 ## 1.2.5 — 2026-10-31
 
 - Editor: el título va en su propio campo, separado del cuerpo de la nota (en Simplenote sigue siendo la primera línea).
