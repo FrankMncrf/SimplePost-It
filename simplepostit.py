@@ -51,7 +51,7 @@ from PyQt6.QtCore import (QPointF, QRectF, Qt, QTimer, QObject, pyqtSignal,  # n
 from PyQt6.QtGui import (QColor, QCursor, QDesktopServices, QFont, QFontMetricsF,  # noqa: E402
                          QGuiApplication, QIcon, QImage, QKeySequence, QLinearGradient, QPainter,
                          QPainterPath, QPen, QPixmap, QRegion, QTextCharFormat, QTextLayout,
-                         QTextOption, QShortcut)
+                         QTextCursor, QTextOption, QShortcut)
 from PyQt6.QtNetwork import QLocalServer, QLocalSocket  # noqa: E402
 from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDialog,  # noqa: E402
                              QDialogButtonBox, QFontComboBox, QFormLayout, QHBoxLayout, QLabel,
@@ -978,7 +978,7 @@ class Sync(QObject):
     def apply(self, token, op, key, data):
         now = time.time()
         if op == "create":
-            note = {"content": data["content"], "tags": [],
+            note = {"content": data["content"], "tags": data.get("tags", []),
                     "systemTags": ["pinned", "markdown"] if data.get("md") else ["pinned"],
                     "deleted": False, "shareURL": "", "publishURL": "",
                     "creationDate": now, "modificationDate": now}
@@ -1573,7 +1573,8 @@ class NoteEditor(QWidget):
     """Escribir una nota nueva o editar una existente; se guarda en la cuenta de Simplenote."""
     open_editors = []
 
-    def __init__(self, sync, key=None, content="", on_saved=None, on_trashed=None):
+    def __init__(self, sync, key=None, content="", on_saved=None, on_trashed=None,
+                 private=False, on_private=None):
         # Tool: sin ícono en la barra de tareas ni en el dock (se quedaba pegado al cerrar)
         flags = Qt.WindowType.Window | Qt.WindowType.WindowStaysOnTopHint
         if not IS_MAC:
@@ -1581,14 +1582,21 @@ class NoteEditor(QWidget):
         super().__init__(None, flags)
         self.sync, self.key, self.original = sync, key, content
         self.on_saved, self.on_trashed = on_saved, on_trashed
+        self.was_private, self.on_private = private, on_private
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.setWindowTitle(tr("Editar nota") if key else tr("Nueva nota"))
         self.setWindowIcon(QIcon(app_icon()))
         self.resize(420, 330)
         lay = QVBoxLayout(self)
-        hint = QLabel(tr("<small>La primera línea es el título. Usa <tt>- [ ] tarea</tt> para pendientes. "
-                         "Ctrl+Enter guarda.</small>"))
-        lay.addWidget(hint)
+        top = QHBoxLayout()
+        top.addWidget(QLabel(tr("<small>La primera línea es el título. Ctrl+Enter guarda.</small>")), 1)
+        checklist = QPushButton(tr("☐ Lista de tareas"))
+        checklist.setToolTip(tr("Convierte las líneas seleccionadas (o la actual) en una lista de "
+                                "tareas de Simplenote, o la quita si ya lo son"))
+        checklist.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        checklist.clicked.connect(self.toggle_checklist)
+        top.addWidget(checklist)
+        lay.addLayout(top)
         self.text = QPlainTextEdit()
         self.text.setPlainText(content)
         lay.addWidget(self.text, 1)
@@ -1605,6 +1613,11 @@ class NoteEditor(QWidget):
             self.markdown.setToolTip(tr("Activa Markdown en Simplenote: **negrita**, *cursiva*, "
                                         "`código`, ## subtítulos, [enlace](url)"))
             bar.addWidget(self.markdown)
+        self.private = QCheckBox(tr("Privada"))
+        self.private.setToolTip(tr("Texto borroso en el escritorio hasta pasar el ratón "
+                                   "(etiqueta «privado» en Simplenote)"))
+        self.private.setChecked(private)
+        bar.addWidget(self.private)
         bar.addStretch(1)
         cancel = QPushButton(tr("Cancelar"))
         cancel.clicked.connect(self.close)
@@ -1641,6 +1654,36 @@ class NoteEditor(QWidget):
             NoteEditor.open_editors.remove(self)
         super().closeEvent(ev)
 
+    def toggle_checklist(self):
+        """Pone o quita "- [ ] " al principio de cada línea seleccionada (las vacías no cuentan)."""
+        cursor = self.text.textCursor()
+        doc = self.text.document()
+        first = doc.findBlock(cursor.selectionStart())
+        last = doc.findBlock(cursor.selectionEnd())
+        blocks, block = [], first
+        while block.isValid():
+            blocks.append(block)
+            if block == last:
+                break
+            block = block.next()
+        lines = [b for b in blocks if b.text().strip()] or blocks
+        item = re.compile(r"^(\s*)- \[[ xX]\] ?")
+        remove = all(item.match(b.text()) for b in lines)
+        cursor.beginEditBlock()
+        for b in lines:
+            edit = QTextCursor(b)
+            m = item.match(b.text())
+            if remove:
+                edit.setPosition(b.position() + len(m.group(1)))
+                edit.setPosition(b.position() + m.end(), QTextCursor.MoveMode.KeepAnchor)
+                edit.removeSelectedText()
+            elif not m:
+                indent = len(b.text()) - len(b.text().lstrip())
+                edit.setPosition(b.position() + indent)
+                edit.insertText("- [ ] ")
+        cursor.endEditBlock()
+        self.text.setFocus()
+
     def trash(self):
         if confirm_trash(parse(self.original)[0], self):
             self.sync.request("trash", self.key)
@@ -1657,7 +1700,10 @@ class NoteEditor(QWidget):
                     self.on_saved(self.key, content)
             else:
                 self.sync.request("create", content=content,
-                                  md=bool(self.markdown and self.markdown.isChecked()))
+                                  md=bool(self.markdown and self.markdown.isChecked()),
+                                  tags=["privado"] if self.private.isChecked() else [])
+        if self.key and self.private.isChecked() != self.was_private and self.on_private:
+            self.on_private(self.private.isChecked())
         self.close()
 
 
@@ -2141,7 +2187,8 @@ class Board(QWidget):
     def edit(self, card):
         content = dict(self.notes).get(card.key)
         if content is not None:
-            NoteEditor(self.sync, card.key, self.edited.get(card.key, content), self.on_edited, self.trashed)
+            NoteEditor(self.sync, card.key, self.edited.get(card.key, content), self.on_edited, self.trashed,
+                       card.private, lambda on: self.set_private(card, on))
 
     def on_edited(self, key, content):
         self.edited[key] = content

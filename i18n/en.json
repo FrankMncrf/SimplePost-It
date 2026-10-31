@@ -5,7 +5,6 @@
  "<p>Software libre bajo la licencia GPL-3.0. Sin ninguna garantía.</p><p>Proyecto independiente: no está afiliado a Simplenote ni a Automattic.</p>": "<p>Free software under the GPL-3.0 license. No warranty of any kind.</p><p>Independent project: not affiliated with Simplenote or Automattic.</p>",
  "<p>Tus notas fijadas de Simplenote como post-its en el escritorio.</p>": "<p>Your pinned Simplenote notes as sticky notes on the desktop.</p>",
  "<small>El idioma cambia al reiniciar SimplePost-It.</small>": "<small>The language changes when SimplePost-It restarts.</small>",
- "<small>La primera línea es el título. Usa <tt>- [ ] tarea</tt> para pendientes. Ctrl+Enter guarda.</small>": "<small>The first line is the title. Use <tt>- [ ] task</tt> for to-dos. Ctrl+Enter saves.</small>",
  "<small>Mientras esta ventana está abierta se ve el contorno del tablero; arrastra un espacio vacío del tablero para moverlo a donde quieras.</small>": "<small>While this window is open the outline of the board is shown; drag an empty spot of the board to move it anywhere you like.</small>",
  "<small>SimplePost-It habla directamente con el servicio de sincronización de Simplenote (Simperium) con tu sesión. Tus notas no pasan por ningún otro servidor; en este equipo solo se guarda la posición y el aspecto de cada nota.</small>": "<small>SimplePost-It talks directly to Simplenote's sync service (Simperium) with your session. Your notes go through no other server; on this computer only the position and look of each note are stored.</small>",
  "Abajo a la derecha": "Bottom right",
@@ -106,5 +105,10 @@
  "Te enviamos un código a {0}. Escríbelo arriba y pulsa Aceptar.": "We sent a code to {0}. Enter it above and press OK.",
  "El código no es válido o ya caducó.": "The code is invalid or has expired.",
  "Pulsa «Enviarme un código» o escribe tu contraseña.": "Press “Email me a code” or enter your password.",
- "Prueba con «Enviarme un código».": "Try “Email me a code”."
+ "Prueba con «Enviarme un código».": "Try “Email me a code”.",
+ "<small>La primera línea es el título. Ctrl+Enter guarda.</small>": "<small>The first line is the title. Ctrl+Enter saves.</small>",
+ "☐ Lista de tareas": "☐ Checklist",
+ "Convierte las líneas seleccionadas (o la actual) en una lista de tareas de Simplenote, o la quita si ya lo son": "Turns the selected lines (or the current one) into a Simplenote checklist, or removes it if they already are",
+ "Privada": "Private",
+ "Texto borroso en el escritorio hasta pasar el ratón (etiqueta «privado» en Simplenote)": "Blurred text on the desktop until you hover over it (tag “privado” in Simplenote)"
 }
