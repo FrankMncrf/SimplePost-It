@@ -1,5 +1,11 @@
 # Novedades
 
+## 1.2.5 — 2026-10-31
+
+- Editor: el título va en su propio campo, separado del cuerpo de la nota (en Simplenote sigue siendo la primera línea).
+- Editor: casilla «Privada» junto a Markdown, también al editar una nota existente.
+- Editor: botón «☐ Lista de tareas» que convierte las líneas seleccionadas en tareas de Simplenote (o las vuelve texto normal).
+
 ## 1.2.4 — 2026-10-30
 
 - Inicio de sesión con un código enviado a tu correo (como en la app de Simplenote). El inicio con contraseña depende de un servidor de Simplenote que a veces no responde.
