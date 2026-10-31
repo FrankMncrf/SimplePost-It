@@ -989,6 +989,9 @@ class Sync(QObject):
             note["content"] = data["content"]
         elif op == "tags":
             note["tags"] = data["tags"]
+        elif op == "markdown":
+            tags = [t for t in note.get("systemTags", []) if t != "markdown"]
+            note["systemTags"] = tags + ["markdown"] if data["on"] else tags
         elif op == "unpin":
             note["systemTags"] = [t for t in note.get("systemTags", []) if t != "pinned"]
         elif op == "trash":
@@ -1573,16 +1576,17 @@ class NoteEditor(QWidget):
     """Escribir una nota nueva o editar una existente; se guarda en la cuenta de Simplenote."""
     open_editors = []
 
-    def __init__(self, sync, key=None, content="", on_saved=None, on_trashed=None,
-                 private=False, on_private=None):
+    def __init__(self, sync, key=None, content="", on_saved=None,
+                 private=False, on_private=None, md=False, on_markdown=None):
         # Tool: sin ícono en la barra de tareas ni en el dock (se quedaba pegado al cerrar)
         flags = Qt.WindowType.Window | Qt.WindowType.WindowStaysOnTopHint
         if not IS_MAC:
             flags |= Qt.WindowType.Tool
         super().__init__(None, flags)
         self.sync, self.key, self.original = sync, key, content
-        self.on_saved, self.on_trashed = on_saved, on_trashed
+        self.on_saved = on_saved
         self.was_private, self.on_private = private, on_private
+        self.was_md, self.on_markdown = md, on_markdown
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.setWindowTitle(tr("Editar nota") if key else tr("Nueva nota"))
         self.setWindowIcon(QIcon(app_icon()))
@@ -1615,18 +1619,11 @@ class NoteEditor(QWidget):
         self.text.setPlainText(body)
         lay.addWidget(self.text, 1)
         bar = QHBoxLayout()
-        self.markdown = None
-        if key:  # borrar solo desde aquí (o desde Simplenote)
-            trash = QPushButton(tr("Mover a la papelera"))
-            trash.setStyleSheet("QPushButton { color: white; background: #c0392b; border-radius: 4px; "
-                                "padding: 5px 12px; } QPushButton:hover { background: #d9463a; }")
-            trash.clicked.connect(self.trash)
-            bar.addWidget(trash)
-        else:  # nota nueva: con o sin Markdown
-            self.markdown = QCheckBox("Markdown")
-            self.markdown.setToolTip(tr("Activa Markdown en Simplenote: **negrita**, *cursiva*, "
-                                        "`código`, ## subtítulos, [enlace](url)"))
-            bar.addWidget(self.markdown)
+        self.markdown = QCheckBox("Markdown")
+        self.markdown.setToolTip(tr("Activa Markdown en Simplenote: **negrita**, *cursiva*, "
+                                    "`código`, ## subtítulos, [enlace](url)"))
+        self.markdown.setChecked(md)
+        bar.addWidget(self.markdown)
         self.private = QCheckBox(tr("Privada"))
         self.private.setToolTip(tr("Texto borroso en el escritorio hasta pasar el ratón "
                                    "(etiqueta «privado» en Simplenote)"))
@@ -1698,13 +1695,6 @@ class NoteEditor(QWidget):
         cursor.endEditBlock()
         self.text.setFocus()
 
-    def trash(self):
-        if confirm_trash(parse(self.original)[0], self):
-            self.sync.request("trash", self.key)
-            if self.on_trashed:
-                self.on_trashed(self.key)
-            self.close()
-
     def save(self):
         title, body = self.title.text().strip(), self.text.toPlainText()
         content = (title + (self.sep + body if body.strip() else "")).strip()
@@ -1715,10 +1705,12 @@ class NoteEditor(QWidget):
                     self.on_saved(self.key, content)
             else:
                 self.sync.request("create", content=content,
-                                  md=bool(self.markdown and self.markdown.isChecked()),
+                                  md=self.markdown.isChecked(),
                                   tags=["privado"] if self.private.isChecked() else [])
         if self.key and self.private.isChecked() != self.was_private and self.on_private:
             self.on_private(self.private.isChecked())
+        if self.key and self.markdown.isChecked() != self.was_md and self.on_markdown:
+            self.on_markdown(self.markdown.isChecked())
         self.close()
 
 
@@ -2202,8 +2194,9 @@ class Board(QWidget):
     def edit(self, card):
         content = dict(self.notes).get(card.key)
         if content is not None:
-            NoteEditor(self.sync, card.key, self.edited.get(card.key, content), self.on_edited, self.trashed,
-                       card.private, lambda on: self.set_private(card, on))
+            NoteEditor(self.sync, card.key, self.edited.get(card.key, content), self.on_edited,
+                       card.private, lambda on: self.set_private(card, on),
+                       self.md.get(card.key, False), lambda on: self.set_markdown(card, on))
 
     def on_edited(self, key, content):
         self.edited[key] = content
@@ -2266,6 +2259,11 @@ class Board(QWidget):
         tags = [t for t in card.tags if t.lower() not in PRIVATE_TAGS] + (["privado"] if on else [])
         self.sync.request("tags", card.key, tags=tags)
         self.tag_edits[card.key] = tags
+        self.rebuild()
+
+    def set_markdown(self, card, on):
+        self.sync.request("markdown", card.key, on=on)
+        self.md[card.key] = on
         self.rebuild()
 
     def toggle_collapse(self, card):
