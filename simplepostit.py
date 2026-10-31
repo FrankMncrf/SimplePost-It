@@ -1588,8 +1588,21 @@ class NoteEditor(QWidget):
         self.setWindowIcon(QIcon(app_icon()))
         self.resize(420, 330)
         lay = QVBoxLayout(self)
+        # en Simplenote el título es la primera línea de la nota: aquí va en su propio campo
+        title, _, body = content.partition("\n")
+        stripped = body.lstrip("\n")
+        self.sep = "\n" * (1 + len(body) - len(stripped))  # líneas en blanco tras el título, como estaban
+        body = stripped
+        self.title = QLineEdit(title)
+        self.title.setPlaceholderText(tr("Título"))
+        font = self.title.font()
+        font.setBold(True)
+        font.setPointSizeF(font.pointSizeF() * 1.15)
+        self.title.setFont(font)
+        self.title.returnPressed.connect(lambda: self.text.setFocus())
+        lay.addWidget(self.title)
         top = QHBoxLayout()
-        top.addWidget(QLabel(tr("<small>La primera línea es el título. Ctrl+Enter guarda.</small>")), 1)
+        top.addWidget(QLabel(tr("<small>Ctrl+Enter guarda.</small>")), 1)
         checklist = QPushButton(tr("☐ Lista de tareas"))
         checklist.setToolTip(tr("Convierte las líneas seleccionadas (o la actual) en una lista de "
                                 "tareas de Simplenote, o la quita si ya lo son"))
@@ -1598,7 +1611,8 @@ class NoteEditor(QWidget):
         top.addWidget(checklist)
         lay.addLayout(top)
         self.text = QPlainTextEdit()
-        self.text.setPlainText(content)
+        self.text.setPlaceholderText(tr("Nota"))
+        self.text.setPlainText(body)
         lay.addWidget(self.text, 1)
         bar = QHBoxLayout()
         self.markdown = None
@@ -1647,7 +1661,7 @@ class NoteEditor(QWidget):
         # algunos gestores de ventanas no le dan el foco a una ventana nueva de una app sin foco
         self.raise_()
         self.activateWindow()
-        self.text.setFocus()
+        (self.text if self.key else self.title).setFocus()
 
     def closeEvent(self, ev):
         if self in NoteEditor.open_editors:
@@ -1692,7 +1706,8 @@ class NoteEditor(QWidget):
             self.close()
 
     def save(self):
-        content = self.text.toPlainText().strip()
+        title, body = self.title.text().strip(), self.text.toPlainText()
+        content = (title + (self.sep + body if body.strip() else "")).strip()
         if content and content != self.original:
             if self.key:
                 self.sync.request("edit", self.key, content=content)

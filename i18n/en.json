@@ -106,9 +106,11 @@
  "El código no es válido o ya caducó.": "The code is invalid or has expired.",
  "Pulsa «Enviarme un código» o escribe tu contraseña.": "Press “Email me a code” or enter your password.",
  "Prueba con «Enviarme un código».": "Try “Email me a code”.",
- "<small>La primera línea es el título. Ctrl+Enter guarda.</small>": "<small>The first line is the title. Ctrl+Enter saves.</small>",
  "☐ Lista de tareas": "☐ Checklist",
  "Convierte las líneas seleccionadas (o la actual) en una lista de tareas de Simplenote, o la quita si ya lo son": "Turns the selected lines (or the current one) into a Simplenote checklist, or removes it if they already are",
  "Privada": "Private",
- "Texto borroso en el escritorio hasta pasar el ratón (etiqueta «privado» en Simplenote)": "Blurred text on the desktop until you hover over it (tag “privado” in Simplenote)"
+ "Texto borroso en el escritorio hasta pasar el ratón (etiqueta «privado» en Simplenote)": "Blurred text on the desktop until you hover over it (tag “privado” in Simplenote)",
+ "<small>Ctrl+Enter guarda.</small>": "<small>Ctrl+Enter saves.</small>",
+ "Título": "Title",
+ "Nota": "Note"
 }
